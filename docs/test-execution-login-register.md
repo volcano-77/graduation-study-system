@@ -42,9 +42,9 @@
 | REGISTER-011 | 使用 1 位密码注册并登录 | 注册阶段应有最小长度限制，拒绝过短密码 | 密码 `1` 注册返回 201；随后同一账号登录返回 200 并进入学习空间 | **Fail** | [REGISTER-011-201.png](./screenshots/REGISTER-011-201.png)、[REGISTER-011-login-200.png](./screenshots/REGISTER-011-login-200.png) |
 | LOGIN-014 | 退出后访问受保护页面 | 退出回到登录页；直接访问 `/dashboard` 仍重定向登录页 | 退出后回到登录页；手动访问 `/dashboard` 后再次显示登录页 | **Pass** | [LOGIN-014-logout.png](./screenshots/LOGIN-014-logout.png)、[LOGIN-014-redirect.png](./screenshots/LOGIN-014-redirect.png) |
 | LOGIN-004 | 不存在的用户名登录 | 返回 401 和统一错误提示，不进入受保护页面 | `login` 返回 401，页面提示“账号或密码错误”，未进入受保护页面 | **Pass** | [LOGIN-004-401.png](./screenshots/LOGIN-004-401.png) |
-| REGISTER-004 | 使用已存在邮箱注册 | 不创建用户，接口不应返回服务器内部错误 | 页面提示用户名或邮箱可能已存在，但 `register` 实际返回 500 | **Fail** | [REGISTER-004-500.png](./screenshots/REGISTER-004-500.png) |
+| REGISTER-004 | 使用已存在邮箱注册 | 不创建用户，接口不应返回服务器内部错误 | 页面提示用户名或邮箱可能已存在，`register` 返回 500；SQL 查询确认没有创建 `qa_new_name` | **Fail** | [REGISTER-004-500.png](./screenshots/REGISTER-004-500.png)、[REGISTER-SQL-user-data-validation.png](./screenshots/REGISTER-SQL-user-data-validation.png) |
 | REGISTER-009 | 注册页提交非法邮箱 | 浏览器格式校验阻止提交，不调用注册接口 | 页面显示邮箱格式提示，未产生 `POST /api/register` | **Pass** | [REGISTER-009-email-validation.png](./screenshots/REGISTER-009-email-validation.png) |
-| REGISTER-010 | 直接向接口提交非法邮箱 | 返回 400，不创建非法邮箱用户 | `POST /api/register` 返回 201 和 `{ success: true }`，非法邮箱用户被创建 | **Fail** | [REGISTER-010-invalid-email-201.png](./screenshots/REGISTER-010-invalid-email-201.png) |
+| REGISTER-010 | 直接向接口提交非法邮箱 | 返回 400，不创建非法邮箱用户 | `POST /api/register` 返回 201 和 `{ success: true }`；SQL 查询确认非法邮箱用户已写入 `users` 表 | **Fail** | [REGISTER-010-invalid-email-201.png](./screenshots/REGISTER-010-invalid-email-201.png)、[REGISTER-SQL-user-data-validation.png](./screenshots/REGISTER-SQL-user-data-validation.png) |
 | LOGIN-012 | 登录成功后刷新页面 | 刷新后保持登录，仍可访问受保护页面，用户状态不丢失 | 刷新 `/dashboard` 后仍登录，可继续进入 `/groups`；Local Storage 中 `token` 和 `user` 仍存在 | **Pass** | [LOGIN-012-localstorage.png](./screenshots/LOGIN-012-localstorage.png) |
 
 ## 5. 详细执行记录与证据
@@ -120,6 +120,7 @@
 
 - 实际数据：新用户名 `qa_new_name`；已存在邮箱 `qa.user01@example.com`；密码在截图中已遮罩。
 - 实际结果：注册失败，页面显示“注册失败，用户名或邮箱可能已存在”，`POST /api/register` 返回 500。
+- 数据库复核：SQL 查询结果中没有 `qa_new_name`，确认本次重复邮箱注册没有错误创建该用户。
 - 与预期差异：已存在邮箱属于唯一字段业务冲突，不应以 500 表示服务器内部错误，更合理的状态为 409 Conflict。
 - 判定：**Fail**。
 - Bug：与重复用户名场景属于相同的接口错误映射问题，合并记录于 [`BUG-LR-001`](./bug-report.md#bug-lr-001重复用户名或邮箱注册返回-500)。
@@ -138,12 +139,31 @@
 ### REGISTER-010：绕过页面直接提交非法邮箱
 
 - 实际数据：`{"username":"qa_bad_email_api","email":"invalid-email","password":"Test@1234"}`。
-- 实际结果：直接调用 `POST /api/register` 后，接口返回 201，响应为 `{ success: true }`，非法邮箱用户被成功创建。
+- 实际结果：直接调用 `POST /api/register` 后，接口返回 201，响应为 `{ success: true }`。
+- 数据库复核：SQL 查询确认 `qa_bad_email_api` 已存在于 `users` 表，邮箱为 `invalid-email`，角色为 `user`；非法邮箱账号已真实落库。
 - 与预期差异：后端应独立校验邮箱格式，并对非法邮箱返回 400，而不能只依赖浏览器校验。
 - 判定：**Fail**。
 - Bug：[`BUG-LR-003`](./bug-report.md#bug-lr-003后端缺少邮箱格式校验可绕过前端创建非法邮箱账号)。
 
 ![REGISTER-010：接口接受非法邮箱并返回 201](./screenshots/REGISTER-010-invalid-email-201.png)
+
+#### REGISTER-004、REGISTER-010 补充 SQL 数据校验
+
+执行 SQL：
+
+```sql
+SELECT username, email, role
+FROM users
+WHERE username IN ('qa_user01', 'qa_bad_email_api', 'qa_new_name');
+```
+
+实际查询结果：
+
+- `qa_user01` 存在，邮箱为 `qa.user01@example.com`。
+- `qa_bad_email_api` 存在，邮箱为 `invalid-email`，确认 REGISTER-010 的非法邮箱账号已经写入数据库。
+- 查询结果中没有 `qa_new_name`，确认 REGISTER-004 虽然返回 500，但没有错误创建该用户。
+
+![REGISTER-004、REGISTER-010：users 表数据校验结果](./screenshots/REGISTER-SQL-user-data-validation.png)
 
 ### LOGIN-012：登录成功后刷新页面
 

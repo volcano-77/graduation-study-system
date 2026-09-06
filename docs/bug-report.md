@@ -162,7 +162,7 @@
 
 ### 缺陷描述
 
-注册页面会利用浏览器的 `type="email"` 校验阻止明显的非法邮箱提交，但直接调用注册接口时可以绕过该校验。后端接受 `invalid-email` 并创建账号，说明关键输入校验只存在于客户端，接口本身没有执行邮箱格式校验。
+注册页面会利用浏览器的 `type="email"` 校验阻止明显的非法邮箱提交，但直接调用注册接口时可以绕过该校验。后端接受 `invalid-email` 并创建账号；补充 SQL 查询已确认该账号真实写入 `users` 表，说明关键输入校验只存在于客户端，接口本身没有执行邮箱格式校验，并会造成非法邮箱数据落库。
 
 ### 前置条件
 
@@ -197,7 +197,8 @@
 
 - 接口返回 201。
 - 响应体为 `{ success: true }`。
-- 非法邮箱用户被成功创建。
+- SQL 查询确认 `qa_bad_email_api` 已存在于 `users` 表，邮箱为 `invalid-email`，角色为 `user`。
+- 非法邮箱用户不只是收到成功响应，而是已经真实写入数据库。
 - REGISTER-010 判定为 Fail。
 
 ### 影响
@@ -214,6 +215,10 @@
 Console 中显示向注册接口提交 `invalid-email` 后，状态码为 201，响应为 `{ success: true }`：
 
 ![BUG-LR-003：后端接受非法邮箱并返回 201](./screenshots/REGISTER-010-invalid-email-201.png)
+
+SQL 查询结果确认 `qa_bad_email_api` 的非法邮箱数据已经写入 `users` 表：
+
+![BUG-LR-003：非法邮箱账号已确认落库](./screenshots/REGISTER-SQL-user-data-validation.png)
 
 ## BUG-GR-001：系统允许创建重复名称的小组
 
