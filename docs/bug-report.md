@@ -2,7 +2,7 @@
 
 ## 1. 报告范围
 
-本报告记录当前已经实际执行的登录、注册、小组管理、成员权限和任务管理测试中发现的问题。登录注册结果见 [`test-execution-login-register.md`](./test-execution-login-register.md)，小组管理结果见 [`test-execution-groups.md`](./test-execution-groups.md)，邀请与成员权限结果见 [`test-execution-group-members.md`](./test-execution-group-members.md)，任务管理结果见 [`test-execution-tasks.md`](./test-execution-tasks.md)。未执行场景和仅通过源码推测的问题不列入本报告；没有明确需求依据的问题会标注为“业务规则缺口 / 可疑缺陷”或“需求待确认 / 权限与隐私风险候选”。
+本报告记录当前已经实际执行的登录、注册、小组管理、成员权限、任务管理和讨论实时消息测试中发现的问题。登录注册结果见 [`test-execution-login-register.md`](./test-execution-login-register.md)，小组管理结果见 [`test-execution-groups.md`](./test-execution-groups.md)，邀请与成员权限结果见 [`test-execution-group-members.md`](./test-execution-group-members.md)，任务管理结果见 [`test-execution-tasks.md`](./test-execution-tasks.md)，讨论与实时消息结果见 [`test-execution-discussions.md`](./test-execution-discussions.md)。未执行场景和仅通过源码推测的问题不列入本报告；没有明确需求依据的问题会标注为“业务规则缺口 / 可疑缺陷”或“需求待确认 / 权限与隐私风险候选”。
 
 | 记录编号 | 问题标题 | 关联场景 | 问题性质 | 严重程度 | 优先级 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -13,6 +13,9 @@
 | BUG-TASK-002 | 后端允许纯空格任务内容落库 | TASK-012 | 已确认缺陷 | 中 | P1 | 待修复 |
 | BUG-TASK-003 | 普通任务接口错误状态码语义不正确 | TASK-013-B～TASK-013-E | 已确认缺陷 | 中 | P2 | 待修复 |
 | BUG-TASK-004 | 非法 group_id 未提前校验并暴露数据库错误 | TASK-013-F | 已确认缺陷 | 中 | P1 | 待修复 |
+| BUG-DISC-001 | 讨论REST接口缺少小组成员授权校验 | DISC-007、DISC-008 | 已确认缺陷 | 高 | P0 | 待修复 |
+| BUG-DISC-002 | Socket.IO缺少认证与房间成员授权 | DISC-006 | 已确认缺陷 | 高 | P0 | 待修复 |
+| BUG-DISC-003 | 讨论group id及资源存在性校验不完整 | DISC-011、DISC-012 | 已确认缺陷 | 中 | P2 | 待修复 |
 | BUG-GR-001 | 系统允许创建重复名称的小组 | GROUP-003 | 业务规则缺口 / 可疑缺陷 | 低（待确认） | P3 | 待产品确认 |
 | RISK-GM-001 | 非成员可读取小组成员邮箱等信息 | GROUP-PERM-001-3 | 需求待确认 / 权限与隐私风险候选 | 待确认 | 待确认 | 待需求确认 |
 
@@ -486,6 +489,152 @@ C 已登录但不属于 group 31。使用 C 的有效登录状态直接调用普
 
 ![BUG-TASK-004：非法 group_id 返回 200 并暴露数据库错误](./screenshots/TASK-013-invalid-group-type-api.png)
 
+## BUG-DISC-001：讨论REST接口缺少小组成员授权校验
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 讨论区、成员权限 |
+| 关联场景 | DISC-007、DISC-008 |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 高 |
+| 优先级 | P0 |
+| 状态 | 待修复 |
+| 测试角色 | C：`qa_nonmember01`，user id 26 |
+| 目标小组 | group 31；测试前C不是成员 |
+
+### 缺陷描述
+
+非成员C使用有效登录状态即可读取group 31的完整历史讨论。C向该组发送消息时，后端不但没有拒绝，还自动向 `group_members` 插入成员关系，再把消息写入 `discussions`。这绕过了项目已经存在的邀请、接受流程。
+
+### 复现步骤
+
+1. 使用SQL确认 `group_id=31/user_id=26` 没有成员记录。
+2. C请求 `GET /api/groups/31/discussions`。
+3. 观察接口返回200、`success:true` 和4条历史讨论。
+4. C向同一路径POST `disc20260908_nonmember_autojoin_001`。
+5. 观察接口返回200、`success:true`。
+6. 查询 discussions 和 group_members。
+
+### 预期结果
+
+- GET和POST均应验证当前用户是目标小组owner或成员。
+- 非成员请求应返回403，不返回讨论内容、不写入消息，也不能改变成员关系。
+- 加入小组必须沿用邀请和接受流程。
+
+### 实际结果与影响
+
+- GET返回200并暴露4条历史讨论。
+- POST返回200，discussion id 130真实写入数据库。
+- group_members新增 `group_id=31/user_id=26/role=成员`。
+- 自动加入使用中文 `成员`，与邀请接受流程写入的英文 `member` 不一致。
+- 任意已登录用户知道group id后，可以跨组读取讨论并绕过邀请加入小组，影响隐私和成员关系完整性。
+
+### 代码关联
+
+GET只校验登录，未调用成员访问检查；POST发现没有成员记录时会主动插入成员，再保存消息，见 [`server/index.js`](../server/index.js#L2418) 和 [`server/index.js`](../server/index.js#L2454)。本缺陷由实际REST响应和SQL结果确认。
+
+### 测试证据
+
+![BUG-DISC-001：C不是group31成员](./screenshots/DISC-007-nonmember-proof-sql.png)
+
+![BUG-DISC-001：非成员读取讨论返回200](./screenshots/DISC-007-nonmember-read-api.png)
+
+![BUG-DISC-001：非成员发送讨论返回200](./screenshots/DISC-008-nonmember-post-api.png)
+
+![BUG-DISC-001：非成员消息真实落库](./screenshots/DISC-008-nonmember-message-sql.png)
+
+![BUG-DISC-001：后端自动新增成员关系](./screenshots/DISC-008-nonmember-autojoin-sql.png)
+
+## BUG-DISC-002：Socket.IO缺少认证与房间成员授权
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 实时消息、Socket.IO权限 |
+| 关联场景 | DISC-006 |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 高 |
+| 优先级 | P0 |
+| 状态 | 待修复 |
+
+### 缺陷描述与复现步骤
+
+1. 启动一个不携带token的匿名 Socket.IO 客户端。
+2. 连接 `http://localhost:3001`，发送 `join_group(31)`。
+3. 客户端成功连接并显示已经加入room 31。
+4. A通过正常讨论页面发送 `disc20260908_socket_probe_001`。
+5. 匿名客户端收到完整的 `new_message`，其中包含group id、user id、用户名、内容和时间。
+
+### 预期结果
+
+- Socket握手必须验证有效登录身份。
+- `join_group` 必须检查当前Socket用户是否属于目标小组。
+- 未登录或非成员客户端不能加入房间，也不能接收实时消息。
+
+### 实际结果与影响
+
+- 匿名客户端无token即可连接并加入room 31。
+- A合法发送后，匿名端成功收到group 31实时消息。
+- 外部调用者只要知道group id即可监听组内后续讨论，REST接口的登录校验无法保护Socket广播内容。
+
+### 代码关联
+
+Socket服务没有认证中间件；`join_group` 只把参数解析为正整数后执行 `socket.join`，没有用户或成员查询，见 [`server/index.js`](../server/index.js#L60)。
+
+### 测试证据
+
+![BUG-DISC-002：匿名客户端连接并加入room31](./screenshots/DISC-006-anonymous-socket-join-room.png)
+
+![BUG-DISC-002：A合法发送测试消息](./screenshots/DISC-006-legit-send-post-200.png)
+
+![BUG-DISC-002：匿名客户端收到实时消息](./screenshots/DISC-006-anonymous-socket-receive.png)
+
+## BUG-DISC-003：讨论group id及资源存在性校验不完整
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 讨论REST接口、资源ID校验 |
+| 关联场景 | DISC-011、DISC-012 |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 中 |
+| 优先级 | P2 |
+| 状态 | 待修复 |
+
+### 缺陷描述
+
+讨论GET接口对group id使用宽松整数解析，并且查询历史前不确认小组是否存在。这导致 `31abc` 被当作group 31，同时不存在小组999999返回HTTP 200空数组；同一不存在小组的POST却正确返回404。
+
+### 复现步骤与实际结果
+
+1. 请求 `GET /api/groups/31abc/discussions`，实际返回200和group 31的5条讨论。
+2. 请求 `GET /api/groups/999999/discussions`，实际返回200、`success:true` 和空数组。
+3. 向 `/api/groups/999999/discussions` POST消息，实际返回404和“小组不存在”。
+
+### 预期结果
+
+- group id必须是完整的正整数字符串，`31abc` 应返回400。
+- GET和POST都应先确认小组存在；不存在资源应统一返回404。
+
+### 影响
+
+- 非法路径可能被映射到真实小组，造成请求目标与调用者输入不一致。
+- 客户端无法根据GET结果区分“不存在的小组”和“存在但没有讨论的小组”。
+
+### 代码关联
+
+GET和POST都使用 `Number.parseInt`；GET随后直接查询 discussions，没有查询 groups_table，而POST会先检查小组存在性，见 [`server/index.js`](../server/index.js#L2418) 和 [`server/index.js`](../server/index.js#L2454)。
+
+### 测试证据
+
+![BUG-DISC-003：31abc被解析成group31](./screenshots/DISC-011-prefixed-group-id-api.png)
+
+![BUG-DISC-003：不存在小组GET和POST语义不一致](./screenshots/DISC-012-missing-group-api.png)
+
 ## 2. 需求待确认 / 权限与隐私风险候选
 
 ### RISK-GM-001：非成员可读取小组成员邮箱等信息
@@ -530,9 +679,9 @@ C 已登录但不属于 group 31。使用 C 的有效登录状态直接调用普
 
 | 问题分类 | 数量 |
 | --- | ---: |
-| 已确认缺陷 | 7 |
+| 已确认缺陷 | 10 |
 | 业务规则缺口 / 可疑缺陷 | 1 |
 | 需求待确认 / 权限与隐私风险候选 | 1 |
-| **问题记录合计** | **9** |
+| **问题记录合计** | **12** |
 
-7 个已确认缺陷中，高严重程度 2 个、中严重程度 5 个。另有 2 个没有明确需求依据的问题：BUG-GR-001 为小组名称规则缺口，RISK-GM-001 为成员信息权限与隐私风险候选。TASK-006～TASK-010 属于同一根因——普通任务接口没有小组成员权限校验——已合并到 BUG-TASK-001，没有按接口重复计数；TASK-013-B～E 属于相同的 HTTP 状态码语义问题，已合并到 BUG-TASK-003。所有问题均未修改代码；当前也没有执行修复后的回归测试。
+10个已确认缺陷中，高严重程度4个、中严重程度6个。另有2个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口，RISK-GM-001为成员信息权限与隐私风险候选。DISC-007与DISC-008按REST成员授权根因合并为BUG-DISC-001；DISC-011与DISC-012按group id和资源存在性校验根因合并为BUG-DISC-003，没有机械拆分。成功POST返回200、允许重复文本、没有编辑/删除/回复、`@成员`不生成通知、历史无分页和未读不持久化均未作为Bug。所有问题均未修改代码；当前也没有执行修复后的回归测试。

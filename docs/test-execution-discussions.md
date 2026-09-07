@@ -1,0 +1,237 @@
+# 讨论区与实时消息模块测试执行报告
+
+## 1. 测试范围
+
+本报告只记录 2026-09-08 已实际执行并保留证据的讨论区与实时消息测试。测试覆盖历史消息加载、组长与普通成员发送、Socket.IO 实时接收、未读角标、未登录访问、非成员越权、输入校验、group id 校验，以及页面、REST、Socket 和数据库的一致性。
+
+- 测试小组：group 31（`qa_group01`）
+- A 组长：`qa_user01`，user id 21
+- B 普通成员：`demo_user`，user id 20
+- C 非成员：`qa_nonmember01`，user id 26
+- 执行方式：页面手工操作、DevTools Network/Console、匿名 Socket.IO 客户端、只读 SQL 校验
+- 代码基线：`clean-main`，本轮开始时 HEAD 为 `c9930ad7c1f9c88b28853a07273d6ca1c173734d`
+- 本报告不把源码预测、未执行场景或当前不存在的功能计入实际执行统计。
+
+当前讨论模块没有消息编辑、删除、撤回、回复、分页和管理员讨论监管功能；`@成员`只有前端选择与高亮，没有通知闭环。这些当前设计不作为本轮缺陷。
+
+## 2. 执行环境
+
+| 项目 | 环境 |
+| --- | --- |
+| 操作系统 | Windows |
+| 前端 | React + Vite，`http://localhost:5173` |
+| 后端 | Node.js + Express + Socket.IO，`http://localhost:3001` |
+| 数据库 | 本地 MySQL |
+| 浏览器与工具 | Chromium 内核浏览器、DevTools、PowerShell 匿名 Socket 客户端、SQL 查询工具 |
+
+## 3. 执行结果总览
+
+| 场景 | 分类 | 测试内容 | 结果 | 关联问题 |
+| --- | --- | --- | --- | --- |
+| DISC-001 | 正常业务、SQL一致性 | A 加载历史并发送消息 | Pass | — |
+| DISC-002 | 普通成员协作、实时通信 | B 发送，A 不刷新实时收到 | Pass | — |
+| DISC-003 | 实时协作 | A 离开讨论区时显示未读角标，进入后清零 | Pass | — |
+| DISC-004 | 认证 | 无 token 获取讨论历史 | Pass | — |
+| DISC-005 | 认证 | 无 token 发送消息 | Pass | — |
+| DISC-006 | Socket权限、安全 | 匿名客户端加入 room 31 并监听消息 | Fail | BUG-DISC-002 |
+| DISC-007 | REST权限、安全 | 非成员读取 group 31 历史讨论 | Fail | BUG-DISC-001 |
+| DISC-008 | REST权限、安全、数据一致性 | 非成员发送消息并被自动加入小组 | Fail | BUG-DISC-001 |
+| DISC-009 | 输入校验 | 空输入、纯空格和非字符串 content | Pass | — |
+| DISC-010 | 资源ID校验 | 完全非法 group id `abc` | Pass | — |
+| DISC-011 | 资源ID校验 | `31abc` 被解析为 group 31 | Fail | BUG-DISC-003 |
+| DISC-012 | 资源存在性 | 不存在小组的 GET/POST 行为 | Fail | BUG-DISC-003 |
+| DISC-013 | 历史加载、SQL一致性 | 刷新持久化、显示去重和单次落库 | Pass | — |
+
+| 状态 | 数量 | 占比 |
+| --- | ---: | ---: |
+| 实际执行场景 | 13 | 100% |
+| Pass | 8 | 61.5% |
+| Fail | 5 | 38.5% |
+| 需求待确认 / 风险候选 | 0 | 0% |
+
+本轮讨论模块共有 26 张正式证据截图，全部位于 `docs/screenshots/` 并在本报告中引用。整理时整个截图目录共有 104 张图片。
+
+## 4. 详细执行结果与证据
+
+### DISC-001：A 正常加载历史并发送消息 — Pass
+
+- 初始进入讨论区时，`GET /api/groups/31/discussions` 返回 200，页面显示0条历史消息。
+- A 发送 `disc20260908_owner_001`，POST 返回 200，页面显示1条消息。
+- SQL 确认生成 discussion id 126，`group_id=31`、`user_id=21`，发送者为 `qa_user01`，内容与页面一致。
+
+![DISC-001：历史讨论GET返回200](./screenshots/DISC-001-history-get-200.png)
+
+![DISC-001：A发送消息POST返回200](./screenshots/DISC-001-owner-send-post-200.png)
+
+![DISC-001：A发送消息SQL结果](./screenshots/DISC-001-owner-send-sql.png)
+
+### DISC-002：B 发送，A 不刷新实时收到 — Pass
+
+- B 发送 `disc20260908_member_realtime_001`，POST 返回 200。
+- A 保持讨论页打开且没有刷新，页面自动出现 B 的新消息。
+- 证明普通成员可以参与讨论，且 `new_message` 实时广播生效。
+
+![DISC-002：B发送消息POST返回200](./screenshots/DISC-002-member-send-post-200.png)
+
+![DISC-002：A不刷新实时收到B的消息](./screenshots/DISC-002-owner-realtime-receive-ui.png)
+
+### DISC-003：未读角标与进入讨论区后清零 — Pass
+
+- A 不在讨论区时，B 发送 `disc20260908_unread_001`。
+- A 的 group 31 小组卡片出现未读角标1。
+- A 进入讨论区后可以看到消息，未读角标清零。
+- 本场景只验证当前会话内的未读逻辑，不把刷新后的持久化作为需求。
+
+![DISC-003：离开讨论区时出现未读角标](./screenshots/DISC-003-unread-badge-ui.png)
+
+![DISC-003：进入讨论区后未读清零](./screenshots/DISC-003-unread-cleared-ui.png)
+
+### DISC-004：无 token 获取讨论历史 — Pass
+
+- 在请求中不携带 token，直接调用 `GET /api/groups/31/discussions`。
+- 接口返回 401、`success:false`，提示“未登录或令牌无效”，没有返回讨论数据。
+
+![DISC-004：无token GET返回401](./screenshots/DISC-004-no-token-get-401.png)
+
+### DISC-005：无 token 发送消息 — Pass
+
+- 不携带 token，向 group 31 POST `disc20260908_noauth_001`。
+- 接口返回 401、`success:false`，提示“未登录或令牌无效”。
+- 最终数据库检查确认该内容没有落库。
+
+![DISC-005：无token POST返回401](./screenshots/DISC-005-no-token-post-401.png)
+
+### DISC-006：匿名 Socket.IO 客户端监听 group 31 — Fail
+
+- 匿名客户端没有携带 token，但成功连接 Socket.IO，并执行 `join_group(31)`。
+- A 合法发送 `disc20260908_socket_probe_001`，POST 返回 200。
+- 匿名客户端收到 `new_message`，内容中包含 group id、user id、用户名和讨论内容。
+- 预期匿名客户端不能加入任何小组房间，也不能接收组内实时消息。
+
+![DISC-006：匿名Socket连接并加入room31](./screenshots/DISC-006-anonymous-socket-join-room.png)
+
+![DISC-006：A合法发送探测消息](./screenshots/DISC-006-legit-send-post-200.png)
+
+![DISC-006：匿名客户端收到group31消息](./screenshots/DISC-006-anonymous-socket-receive.png)
+
+### DISC-007：C 非成员读取 group 31 历史讨论 — Fail
+
+- SQL 先确认 `user_id=26` 不属于 group 31。
+- C 使用有效登录状态直接请求 `GET /api/groups/31/discussions`。
+- 接口返回 200、`success:true`，并返回4条 group 31 历史消息。
+- 预期组内讨论只能由 owner 或成员读取，非成员应返回403。
+
+![DISC-007：C不是group31成员的SQL证明](./screenshots/DISC-007-nonmember-proof-sql.png)
+
+![DISC-007：非成员读取讨论返回200](./screenshots/DISC-007-nonmember-read-api.png)
+
+### DISC-008：C 非成员发送消息并被自动加入小组 — Fail
+
+- C 原本不是 group 31 成员，直接 POST `disc20260908_nonmember_autojoin_001`。
+- 接口返回 200、`success:true`，生成 discussion id 130。
+- SQL 确认消息真实写入 group 31，发送者为 `user_id=26`。
+- SQL 同时确认后端新增 `group_id=31`、`user_id=26`、`role=成员` 的 group_members 记录，绕过邀请和接受流程。
+- `成员` 与正常邀请流程使用的 `member` 取值不一致，作为同一越权缺陷的数据影响记录，不单独拆分Bug。
+
+![DISC-008：非成员POST返回200](./screenshots/DISC-008-nonmember-post-api.png)
+
+![DISC-008：非成员消息已落库](./screenshots/DISC-008-nonmember-message-sql.png)
+
+![DISC-008：非成员被自动加入group_members](./screenshots/DISC-008-nonmember-autojoin-sql.png)
+
+### DISC-009：空输入、纯空格和非字符串 — Pass
+
+- A 在页面保持输入为空并点击发送，没有产生新的POST请求。
+- 绕过页面提交纯空格 content，接口返回400和“消息内容不能为空”。
+- 提交数字 `123` 作为 content，接口同样返回400。
+- 最终SQL没有发现这些异常请求产生的讨论记录。
+
+![DISC-009：页面空输入未产生POST](./screenshots/DISC-009-empty-ui-no-request.png)
+
+![DISC-009：纯空格content返回400](./screenshots/DISC-009-whitespace-post-400.png)
+
+![DISC-009：非字符串content返回400](./screenshots/DISC-009-nonstring-post-400.png)
+
+### DISC-010：完全非法 group id — Pass
+
+- 分别向 `/api/groups/abc/discussions` 发送GET和POST。
+- 两个请求均返回400，提示“无效的小组ID”，没有写入消息。
+
+![DISC-010：非法group id的GET和POST均返回400](./screenshots/DISC-010-invalid-group-id-400.png)
+
+### DISC-011：数字前缀非法 group id — Fail
+
+- 请求 `GET /api/groups/31abc/discussions`。
+- 接口返回200、`success:true`，并返回group 31的5条讨论。
+- 说明路径参数通过 `parseInt` 被宽松解析，`31abc` 被当作合法的31。
+
+![DISC-011：31abc被当作group31](./screenshots/DISC-011-prefixed-group-id-api.png)
+
+### DISC-012：不存在小组的GET/POST语义不一致 — Fail
+
+- `GET /api/groups/999999/discussions` 返回200、`success:true` 和空数组。
+- 对同一小组执行POST时返回404、`success:false`，提示“小组不存在”。
+- 预期GET同样先确认小组资源存在，并对不存在资源返回404。
+
+![DISC-012：不存在小组GET返回200而POST返回404](./screenshots/DISC-012-missing-group-api.png)
+
+### DISC-013：刷新、历史、显示去重与SQL一致性 — Pass
+
+- 刷新A的讨论页面，GET返回200，本轮5条消息仍全部存在并各显示一次。
+- SQL确认 discussion id 126～130 的小组、发送者、内容和时间正确。
+- 按内容分组统计时，每条 `row_count=1`，证明REST写入和Socket广播没有造成重复数据库记录。
+
+![DISC-013：刷新后5条历史消息正常显示](./screenshots/DISC-013-refresh-history-consistency.png)
+
+![DISC-013：本轮5条讨论SQL明细](./screenshots/DISC-013-discussion-data-sql.png)
+
+![DISC-013：每条消息只有一行](./screenshots/DISC-013-no-duplicate-sql.png)
+
+## 5. 已确认缺陷映射
+
+| 缺陷 | 覆盖场景 | 根因与影响 |
+| --- | --- | --- |
+| BUG-DISC-001 讨论REST接口缺少小组成员授权校验 | DISC-007、DISC-008 | GET不校验成员；POST把非成员自动加入小组后允许发送，绕过邀请流程 |
+| BUG-DISC-002 Socket.IO缺少认证与房间成员授权 | DISC-006 | 匿名客户端可以连接、加入已知group room并监听实时消息 |
+| BUG-DISC-003 讨论group id及资源存在性校验不完整 | DISC-011、DISC-012 | 数字前缀非法id被宽松解析；GET不存在小组返回200空数组 |
+
+完整复现步骤和影响见 [`bug-report.md`](./bug-report.md)。
+
+## 6. 测试数据清理
+
+清理前已逐条确认本轮正式消息：
+
+| discussion id | group_id | user_id | content |
+| ---: | ---: | ---: | --- |
+| 126 | 31 | 21 | `disc20260908_owner_001` |
+| 127 | 31 | 20 | `disc20260908_member_realtime_001` |
+| 128 | 31 | 20 | `disc20260908_unread_001` |
+| 129 | 31 | 21 | `disc20260908_socket_probe_001` |
+| 130 | 31 | 26 | `disc20260908_nonmember_autojoin_001` |
+
+收尾操作只删除 discussions 126～130，共5行。清理后再次查询确认：
+
+- discussions 126～130 均不存在；
+- `disc20260908_noauth_001`、`disc20260908_invalid_group_abc`、`disc20260908_missing_group_001` 均未落库；
+- `group_id=31/user_id=26` 的异常 group_members 关系为0行；该关系在正式执行过程中已经手工清理，本次没有再次删除；
+- A、B 的正常成员关系未修改；
+- group 31 清理后没有其他讨论记录，说明没有删除测试前已有讨论。
+
+## 7. 项目累计执行统计
+
+| 测试报告 | 实际执行场景 | Pass | Fail | 需求待确认 / 风险候选 |
+| --- | ---: | ---: | ---: | ---: |
+| 登录注册 | 11 | 7 | 4 | 0 |
+| 小组管理第一批 | 4 | 3 | 0 | 1 |
+| 小组邀请与成员权限 | 8 | 7 | 0 | 1 |
+| 任务管理 | 21 | 10 | 11 | 0 |
+| 讨论与实时消息 | 13 | 8 | 5 | 0 |
+| **累计** | **57** | **35** | **20** | **2** |
+
+当前累计记录10个已确认缺陷和2个需求待确认 / 风险候选。讨论模块新增3个已确认缺陷记录。
+
+## 8. 本轮结论
+
+历史消息加载、A/B正常发送、成员间实时接收、未读角标、无token REST拦截、空值校验和刷新后数据一致性均通过。实际确认的主要风险是：REST接口缺少小组成员权限校验，非成员可读取讨论并通过发消息被自动加入小组；Socket.IO没有认证或房间授权，匿名客户端可监听已知小组消息；group id解析和GET资源存在性校验不完整。
+
+本轮没有修改业务代码或修复缺陷，也没有把当前不存在的功能或源码预测计入执行结果。

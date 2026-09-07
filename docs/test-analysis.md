@@ -161,6 +161,8 @@
 
 注意：当前 `@成员` 主要是前端显示格式，后端没有根据提及内容创建通知，所以不应写成“已完成 @ 消息提醒”。讨论也没有编辑、撤回或删除消息功能。
 
+讨论与实时消息模块已完成13个实际执行场景，结果为Pass 8、Fail 5，详见 [`test-execution-discussions.md`](./test-execution-discussions.md)。已验证通过A/B正常发送、历史加载、实时接收、未读角标、无token REST拦截、空值校验和刷新后数据一致性；同时实际确认非成员可读取和发送组内讨论、发送时会被自动加入小组、匿名Socket客户端可监听已知房间，以及group id与资源存在性校验不完整。上述结论来自实际执行证据，不再只是源码预测。
+
 ### 3.6 资源上传、下载和资料库
 
 代码依据：[`src/pages/GroupDetail.jsx`](../src/pages/GroupDetail.jsx#L679)、[`src/pages/AllFiles.jsx`](../src/pages/AllFiles.jsx)、[`src/pages/GlobalFiles.jsx`](../src/pages/GlobalFiles.jsx)、[`server/index.js`](../server/index.js#L2526)、[`server/index.js`](../server/index.js#L2632)。
@@ -277,8 +279,8 @@
 1. **真实文件接口完全缺少认证和权限校验。** 上传、列表、删除接口都没有 `requireAuthUser`；上传者 ID 来自请求体，删除接口也不判断上传者或组长。任何知道小组/文件 ID 的人都可能查看、冒充上传者或删除文件。依据：[`server/index.js`](../server/index.js#L2632)。
 2. **上传文件可通过静态 URL 未登录下载。** `/uploads` 直接由 Express 静态公开，绕过小组成员权限。依据：[`server/index.js`](../server/index.js#L46)。
 3. **普通任务接口没有小组权限校验。** 已登录用户可以获取全部任务，也可以向其他小组新增任务、修改任意任务状态、删除任意任务。TASK-006～TASK-010 已实际复现这些越权结果，详见 [`test-execution-tasks.md`](./test-execution-tasks.md)。代码依据：[`server/index.js`](../server/index.js#L1663)。
-4. **讨论权限存在严重逻辑错误。** 非成员可以读取讨论；非成员发消息时，后端会自动把该用户加入小组，绕过邀请流程。依据：[`server/index.js`](../server/index.js#L2418)。
-5. **Socket.IO 房间没有身份和成员校验。** 客户端只要知道小组 ID 就能加入房间并接收实时消息。依据：[`server/index.js`](../server/index.js#L60)。
+4. **讨论权限存在严重逻辑错误。** 非成员可以读取讨论；非成员发消息时，后端会自动把该用户加入小组，绕过邀请流程。DISC-007、DISC-008 已实际复现，详见 [`test-execution-discussions.md`](./test-execution-discussions.md)。代码依据：[`server/index.js`](../server/index.js#L2418)。
+5. **Socket.IO 房间没有身份和成员校验。** 客户端只要知道小组 ID 就能加入房间并接收实时消息。DISC-006 已由无token客户端实际复现，详见 [`test-execution-discussions.md`](./test-execution-discussions.md)。代码依据：[`server/index.js`](../server/index.js#L60)。
 6. **创建小组、小组详情和用户搜索接口未登录也可访问。** 用户搜索还返回邮箱，存在信息泄露风险。依据：[`server/index.js`](../server/index.js#L1871)、[`server/index.js`](../server/index.js#L2063)、[`server/index.js`](../server/index.js#L2819)。
 7. **小组成员列表没有成员范围校验。** 任意已登录用户知道小组 ID 后，可查看该组成员的用户名和邮箱。依据：[`server/index.js`](../server/index.js#L1979)。
 
