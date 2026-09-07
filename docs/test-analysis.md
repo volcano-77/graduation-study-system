@@ -138,6 +138,8 @@
 
 当前项目没有任务负责人、截止日期、优先级、任务评论和用户端编辑任务内容，因此不要为这些不存在的功能编写“已完成”测试结论。
 
+任务模块已完成 21 个实际执行场景，结果为 Pass 10、Fail 11，详见 [`test-execution-tasks.md`](./test-execution-tasks.md)。已验证通过三状态流转、普通成员协作、非法状态拦截、跨页面统计一致性，以及管理员任务监管与普通用户管理员接口隔离；同时实际确认普通任务接口存在跨组读取、创建、修改、删除和无范围读取问题，纯空格内容可落库，部分错误场景使用 HTTP 200，以及非法 `group_id` 会暴露数据库错误。上述结论来自实际执行证据，不再只是源码风险推测。
+
 ### 3.5 讨论
 
 代码依据：[`src/pages/GroupDetail.jsx`](../src/pages/GroupDetail.jsx#L547)、[`server/index.js`](../server/index.js#L2418)、[`server/index.js`](../server/index.js#L60)。
@@ -274,7 +276,7 @@
 
 1. **真实文件接口完全缺少认证和权限校验。** 上传、列表、删除接口都没有 `requireAuthUser`；上传者 ID 来自请求体，删除接口也不判断上传者或组长。任何知道小组/文件 ID 的人都可能查看、冒充上传者或删除文件。依据：[`server/index.js`](../server/index.js#L2632)。
 2. **上传文件可通过静态 URL 未登录下载。** `/uploads` 直接由 Express 静态公开，绕过小组成员权限。依据：[`server/index.js`](../server/index.js#L46)。
-3. **普通任务接口没有小组权限校验。** 已登录用户可以获取全部任务，也可以向其他小组新增任务、修改任意任务状态、删除任意任务。依据：[`server/index.js`](../server/index.js#L1663)。
+3. **普通任务接口没有小组权限校验。** 已登录用户可以获取全部任务，也可以向其他小组新增任务、修改任意任务状态、删除任意任务。TASK-006～TASK-010 已实际复现这些越权结果，详见 [`test-execution-tasks.md`](./test-execution-tasks.md)。代码依据：[`server/index.js`](../server/index.js#L1663)。
 4. **讨论权限存在严重逻辑错误。** 非成员可以读取讨论；非成员发消息时，后端会自动把该用户加入小组，绕过邀请流程。依据：[`server/index.js`](../server/index.js#L2418)。
 5. **Socket.IO 房间没有身份和成员校验。** 客户端只要知道小组 ID 就能加入房间并接收实时消息。依据：[`server/index.js`](../server/index.js#L60)。
 6. **创建小组、小组详情和用户搜索接口未登录也可访问。** 用户搜索还返回邮箱，存在信息泄露风险。依据：[`server/index.js`](../server/index.js#L1871)、[`server/index.js`](../server/index.js#L2063)、[`server/index.js`](../server/index.js#L2819)。
@@ -291,7 +293,7 @@
 14. **管理员角色逻辑不一致。** 管理员页面允许创建或修改其他 `admin` 用户，但服务启动时会把用户名不是 `admin` 的用户全部改回普通用户。依据：[`server/index.js`](../server/index.js#L380)。
 15. **默认演示账号密码固定。** 适合本地作品演示，但如果直接部署到公网，任何人都可能登录演示管理员账号。不能把当前版本描述为生产级安全系统。
 16. **未配置 `AUTH_TOKEN_SECRET` 时，每次服务启动会生成随机密钥。** 服务重启后已有 token 全部失效。依据：[`server/index.js`](../server/index.js#L26)。
-17. **接口错误状态码不统一。** 任务、小组等部分接口在失败时仍返回 HTTP 200，仅在 JSON 中写 `success: false`，不利于前端和接口测试准确判断。
+17. **接口错误状态码不统一。** 任务、小组等部分接口在失败时仍返回 HTTP 200，仅在 JSON 中写 `success: false`，不利于前端和接口测试准确判断。TASK-013-B～F 已实际确认任务参数缺失、资源不存在及非法类型场景的这一表现。
 
 ### 完整性和可维护性问题
 
