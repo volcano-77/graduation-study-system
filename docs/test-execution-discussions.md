@@ -2,14 +2,14 @@
 
 ## 1. 测试范围
 
-本报告只记录 2026-09-08 已实际执行并保留证据的讨论区与实时消息测试。测试覆盖历史消息加载、组长与普通成员发送、Socket.IO 实时接收、未读角标、未登录访问、非成员越权、输入校验、group id 校验，以及页面、REST、Socket 和数据库的一致性。
+本报告记录 2026-09-08 完成的讨论区与实时消息测试，以及 2026-09-09 完成的 `@` 提及补充测试。所有结果均已实际执行并保留证据，覆盖历史消息、实时接收、未读角标、认证与非成员权限、输入和 group id 校验、mention 候选与高亮、notifications 联动及数据一致性。
 
 - 测试小组：group 31（`qa_group01`）
 - A 组长：`qa_user01`，user id 21
 - B 普通成员：`demo_user`，user id 20
 - C 非成员：`qa_nonmember01`，user id 26
 - 执行方式：页面手工操作、DevTools Network/Console、匿名 Socket.IO 客户端、只读 SQL 校验
-- 代码基线：`clean-main`，本轮开始时 HEAD 为 `c9930ad7c1f9c88b28853a07273d6ca1c173734d`
+- 代码基线：`clean-main`；主模块开始时 HEAD 为 `c9930ad7c1f9c88b28853a07273d6ca1c173734d`，mention 补充测试收尾前 HEAD 为 `77d4a7c1697395abe64206569d35139daa4025a1`
 - 本报告不把源码预测、未执行场景或当前不存在的功能计入实际执行统计。
 
 当前讨论模块没有消息编辑、删除、撤回、回复、分页和管理员讨论监管功能；`@成员`只有前端选择与高亮，没有通知闭环。这些当前设计不作为本轮缺陷。
@@ -187,17 +187,140 @@
 
 ![DISC-013：每条消息只有一行](./screenshots/DISC-013-no-duplicate-sql.png)
 
-## 5. 已确认缺陷映射
+## 5. `@` 提及补充测试
+
+本节只记录 2026-09-09 已实际执行的 6 个补充场景。统计口径为：DISC-MENTION-002 虽然验证结果是“没有 mention 专用通知”，但该结果符合当前代码设计，且现有需求没有规定 `@` 必须生成通知，因此作为说明性验证计 1 个 Pass；不登记 Bug。
+
+### 5.1 执行结果总览
+
+| 编号 | 场景 | 实际结果 | 判定 | 问题归属 |
+| --- | --- | --- | --- | --- |
+| DISC-MENTION-001 | A 通过候选列表正常 `@` B | 候选、请求格式、页面高亮及 SQL 均正确 | Pass | — |
+| DISC-MENTION-002 | 核对 `@` 与消息通知联动 | 没有新增 notifications，通知红点不增加 | Pass（当前设计说明） | 不登记 Bug |
+| DISC-MENTION-003 | A `@` 自己 | 可以选择、发送和高亮 | Risk / 业务待确认 | RISK-DISC-MENTION-001 |
+| DISC-MENTION-004 | 候选限制与伪造 mention | 前端 UI 排除非成员/不存在用户；直接 API 可伪造并高亮 | Risk / 真实性校验待确认 | RISK-DISC-MENTION-002 |
+| DISC-MENTION-005 | 重复 mention 及重复消息 | 两个 mention 均保存；相同消息可产生两条记录 | Risk / 业务待确认 | RISK-DISC-MENTION-003 |
+| DISC-MENTION-006 | C 非成员向 group 31 发送 mention | 返回 200；消息落库；C 被自动加入小组 | Fail | BUG-DISC-001 |
+
+本轮统计：实际执行 6，Pass 2，Fail 1，Risk / 需求待确认 3。
+
+### 5.2 DISC-MENTION-001：A 正常 `@` B — Pass
+
+- A 输入 `@demo`，候选列表出现 B：`demo_user`。
+- 选择 B 后发送成功，POST `/api/groups/31/discussions` 返回 200。
+- 请求内容为 `@[demo_user](20) mention20260909_001`。
+- 页面把 `@demo_user` 显示为蓝色高亮。
+- SQL 确认 discussion id 131、group id 31、user id 21，content 完整保存。
+
+![DISC-MENTION-001：候选出现demo_user](./screenshots/DISC-MENTION-001-mention-suggestion-ui.png)
+
+![DISC-MENTION-001：发送mention返回200](./screenshots/DISC-MENTION-001-send-mention-200.png)
+
+![DISC-MENTION-001：请求包含正式mention格式](./screenshots/DISC-MENTION-001-request-content.png)
+
+![DISC-MENTION-001：mention消息真实落库](./screenshots/DISC-MENTION-001-sql.png)
+
+### 5.3 DISC-MENTION-002：`@` 与消息通知联动 — Pass（当前设计说明）
+
+- B 在 A `@` 后，notifications 表没有新增记录。
+- B 首页“消息通知”没有新增红点或数量。
+- B 通知页仍只显示已有邀请与邀请结果通知。
+- 当前“消息通知”和“小组讨论未读”是两套功能：前者来自数据库 notifications，后者来自前端 Socket 消息和内存状态。
+- `@` 当前只作为 discussion 文本中的成员选择和高亮标记，不创建 mention 专用 notification。
+
+现有需求没有明确规定 `@` 后必须生成专用通知，因此本场景计 Pass，不登记“通知缺失”Bug。如果后续需求补充该规则，应重新设计预期并执行测试。
+
+![DISC-MENTION-002：notifications无新增记录](./screenshots/DISC-MENTION-002-notifications-sql.png)
+
+![DISC-MENTION-002：消息通知无新增红点](./screenshots/DISC-MENTION-002-no-notification-badge-ui.png)
+
+### 5.4 DISC-MENTION-003：`@` 自己 — Risk / 业务规则待确认
+
+- A 输入 `@qa`，候选列表包含自己 `qa_user01`。
+- 选择并发送 `@[qa_user01](21) selfmention20260909_003`，请求成功，页面正常高亮。
+- 当前没有明确需求禁止 `@` 自己，因此不判 Bug。
+
+![DISC-MENTION-003：候选列表出现自己](./screenshots/DISC-MENTION-003-self-suggestion-ui.png)
+
+![DISC-MENTION-003：自我提及发送并高亮](./screenshots/DISC-MENTION-003-self-mention.png)
+
+### 5.5 DISC-MENTION-004：候选限制与 mention 真实性 — Risk
+
+前端候选限制符合当前设计：输入 `@qa_non` 时没有 C `qa_nonmember01`，输入不存在用户名也没有候选。
+
+绕过前端直接调用讨论 POST 后：
+
+- `@[qa_nonmember01](26) mention20260909_004` 返回 200，页面高亮，SQL id 133 完整落库；
+- `@[不存在用户](999999) mention20260909_004b` 返回 200，页面高亮，SQL id 134 完整落库。
+
+后端把 mention 当作普通文本，不核对显示名、用户 ID 或成员关系。当前没有明确需求规定服务端必须验证 mention 真实性，因此先记录为风险候选，不新增确认缺陷；前端候选限制本身不判 Fail。
+
+![DISC-MENTION-004：非成员不在前端候选](./screenshots/DISC-MENTION-004-nonmember-not-in-suggestions.png)
+
+![DISC-MENTION-004：API伪造非成员mention并高亮](./screenshots/DISC-MENTION-004-forged-nonmember-mention-api-ui.png)
+
+![DISC-MENTION-004：伪造非成员mention落库](./screenshots/DISC-MENTION-004-forged-nonmember-mention-sql.png)
+
+![DISC-MENTION-004：API伪造不存在用户并高亮](./screenshots/DISC-MENTION-004-forged-missing-user-api-ui.png)
+
+![DISC-MENTION-004：不存在用户mention落库](./screenshots/DISC-MENTION-004-forged-missing-user-sql.png)
+
+### 5.6 DISC-MENTION-005：重复 mention 与重复消息 — Risk / 业务规则待确认
+
+- 同一消息选择 B 两次，请求内容为 `@[demo_user](20)@[demo_user](20) duplicate20260909_005`。
+- 首次 POST 返回 200，页面显示两个高亮 `@demo_user`，SQL id 135 完整保存两个标记。
+- 再次发送完全相同内容仍返回 200，SQL id 136 与 id 135 内容相同。
+- 当前没有明确需求要求同一消息中的重复 `@` 去重，也没有要求拦截相同消息重复发送，因此不判 Bug。
+
+![DISC-MENTION-005：重复mention发送返回200](./screenshots/DISC-MENTION-005-duplicate-mention-send-200.png)
+
+![DISC-MENTION-005：请求包含两个相同mention](./screenshots/DISC-MENTION-005-duplicate-mention-payload.png)
+
+![DISC-MENTION-005：两个mention完整落库](./screenshots/DISC-MENTION-005-duplicate-mention-sql.png)
+
+![DISC-MENTION-005：相同消息再次发送返回200](./screenshots/DISC-MENTION-005-duplicate-message-send-200.png)
+
+![DISC-MENTION-005：相同内容形成两条discussion](./screenshots/DISC-MENTION-005-duplicate-message-sql.png)
+
+### 5.7 DISC-MENTION-006：非成员发送 mention 并被自动入组 — Fail
+
+- SQL 预检查确认 C 不属于 group 31，C 首页小组数为 0。
+- C POST `@[demo_user](20) mention20260909_006` 到 `/api/groups/31/discussions`，实际返回 200、`success:true`。
+- SQL 确认 discussion id 137、group id 31、user id 26，内容真实落库。
+- SQL 随后发现 `group_members` 新增 group 31、user 26、role `成员`。
+- 测试结束时该异常成员关系已手工删除，复查为 0 行。
+
+该结果与 DISC-008 属于同一根因：讨论 POST 不拒绝非成员，反而自动创建成员关系。因此继续归入 BUG-DISC-001，不新建重复 Bug。
+
+![DISC-MENTION-006：测试前C不是成员](./screenshots/DISC-MENTION-006-precheck-nonmember-sql.png)
+
+![DISC-MENTION-006：非成员POST返回200](./screenshots/DISC-MENTION-006-nonmember-post-200.png)
+
+![DISC-MENTION-006：非成员消息真实落库](./screenshots/DISC-MENTION-006-nonmember-post-sql.png)
+
+![DISC-MENTION-006：后端自动添加成员关系](./screenshots/DISC-MENTION-006-auto-join-sql.png)
+
+![DISC-MENTION-006：异常成员关系已清理](./screenshots/DISC-MENTION-006-cleanup-member-sql.png)
+
+### 5.8 本轮证据与业务边界结论
+
+- `@` 前端候选、正式 payload 格式和蓝色高亮已经实际验证。
+- discussions POST 不解析或验证 mention，直接保存完整文本。
+- notifications 不会因 `@` 新增记录，Socket.IO 也只有通用 `new_message`，没有 mention 专用事件。
+- `@` 自己、mention 真实性、重复 mention 与重复消息均因缺少明确需求暂记风险，不判 Bug。
+- 非成员发送和自动入组是已确认权限缺陷的补充复现，不增加缺陷数量。
+
+## 6. 已确认缺陷映射
 
 | 缺陷 | 覆盖场景 | 根因与影响 |
 | --- | --- | --- |
-| BUG-DISC-001 讨论REST接口缺少小组成员授权校验 | DISC-007、DISC-008 | GET不校验成员；POST把非成员自动加入小组后允许发送，绕过邀请流程 |
+| BUG-DISC-001 讨论REST接口缺少小组成员授权校验 | DISC-007、DISC-008、DISC-MENTION-006 | GET不校验成员；POST把非成员自动加入小组后允许发送，绕过邀请流程；mention补充场景再次复现 |
 | BUG-DISC-002 Socket.IO缺少认证与房间成员授权 | DISC-006 | 匿名客户端可以连接、加入已知group room并监听实时消息 |
 | BUG-DISC-003 讨论group id及资源存在性校验不完整 | DISC-011、DISC-012 | 数字前缀非法id被宽松解析；GET不存在小组返回200空数组 |
 
 完整复现步骤和影响见 [`bug-report.md`](./bug-report.md)。
 
-## 6. 测试数据清理
+## 7. 测试数据清理
 
 清理前已逐条确认本轮正式消息：
 
@@ -217,7 +340,15 @@
 - A、B 的正常成员关系未修改；
 - group 31 清理后没有其他讨论记录，说明没有删除测试前已有讨论。
 
-## 7. 项目累计执行统计
+`@` 补充测试清理前，通过测试标记确认本轮共有 7 条 discussion：id 131～137。其中清单原先漏列的 id 132 包含 `selfmention20260909_003`，确认属于 DISC-MENTION-003，因此一并精确清理。
+
+- 已删除 discussions 131、132、133、134、135、136、137；
+- 清理后再次按 ID 和全部 mention 测试标记查询，结果为 0 行；
+- `group_members(group_id=31,user_id=26)` 复查为 0 行；
+- DISC-MENTION-002 没有新增 notifications，因此没有删除任何通知；
+- 没有删除测试前已有 discussion、历史通知或正常成员关系。
+
+## 8. 项目累计执行统计
 
 | 测试报告 | 实际执行场景 | Pass | Fail | 需求待确认 / 风险候选 |
 | --- | ---: | ---: | ---: | ---: |
@@ -227,12 +358,13 @@
 | 任务管理 | 21 | 10 | 11 | 0 |
 | 讨论与实时消息 | 13 | 8 | 5 | 0 |
 | 文件上传、下载与资料共享 | 23 | 11 | 11 | 1 |
-| **累计** | **80** | **46** | **31** | **3** |
+| 讨论区 `@` 提及补充 | 6 | 2 | 1 | 3 |
+| **累计** | **86** | **48** | **32** | **6** |
 
-截至文件模块完成，项目累计记录17个已确认缺陷、1个业务规则缺口 / 可疑缺陷、2个需求待确认 / 风险候选，共20条问题记录。文件模块执行详情见 [`test-execution-files.md`](./test-execution-files.md)。
+截至 `@` 提及补充测试完成，项目累计记录17个已确认缺陷、1个业务规则缺口 / 可疑缺陷、5个需求待确认 / 风险候选，共23条问题记录。本轮没有新增确认缺陷；3个Risk分别涉及自我提及规则、mention真实性校验、重复提及与重复消息规则，属于不同待确认问题，因此分别记录。
 
-## 8. 本轮结论
+## 9. 本轮结论
 
-历史消息加载、A/B正常发送、成员间实时接收、未读角标、无token REST拦截、空值校验和刷新后数据一致性均通过。实际确认的主要风险是：REST接口缺少小组成员权限校验，非成员可读取讨论并通过发消息被自动加入小组；Socket.IO没有认证或房间授权，匿名客户端可监听已知小组消息；group id解析和GET资源存在性校验不完整。
+讨论模块原有历史消息、A/B发送、实时接收、未读角标、认证和输入场景保持不变。本次进一步实际验证前端 `@` 候选与高亮、正式 payload、notifications 无联动、自我提及、伪造和重复 mention，以及非成员发送后自动入组。DISC-MENTION-006 补强 BUG-DISC-001 证据，其他未明确需求行为没有强判为 Bug。
 
 本轮没有修改业务代码或修复缺陷，也没有把当前不存在的功能或源码预测计入执行结果。

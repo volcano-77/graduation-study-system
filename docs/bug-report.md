@@ -13,7 +13,7 @@
 | BUG-TASK-002 | 后端允许纯空格任务内容落库 | TASK-012 | 已确认缺陷 | 中 | P1 | 待修复 |
 | BUG-TASK-003 | 普通任务接口错误状态码语义不正确 | TASK-013-B～TASK-013-E | 已确认缺陷 | 中 | P2 | 待修复 |
 | BUG-TASK-004 | 非法 group_id 未提前校验并暴露数据库错误 | TASK-013-F | 已确认缺陷 | 中 | P1 | 待修复 |
-| BUG-DISC-001 | 讨论REST接口缺少小组成员授权校验 | DISC-007、DISC-008 | 已确认缺陷 | 高 | P0 | 待修复 |
+| BUG-DISC-001 | 讨论REST接口缺少小组成员授权校验 | DISC-007、DISC-008、DISC-MENTION-006 | 已确认缺陷 | 高 | P0 | 待修复 |
 | BUG-DISC-002 | Socket.IO缺少认证与房间成员授权 | DISC-006 | 已确认缺陷 | 高 | P0 | 待修复 |
 | BUG-DISC-003 | 讨论group id及资源存在性校验不完整 | DISC-011、DISC-012 | 已确认缺陷 | 中 | P2 | 待修复 |
 | BUG-FILE-001 | 普通文件REST接口缺少认证、小组成员与资源所有权授权 | FILE-005、FILE-006、FILE-012、FILE-013、FILE-014 | 已确认缺陷 | 高 | P0 | 待修复 |
@@ -26,6 +26,9 @@
 | BUG-GR-001 | 系统允许创建重复名称的小组 | GROUP-003 | 业务规则缺口 / 可疑缺陷 | 低（待确认） | P3 | 待产品确认 |
 | RISK-GM-001 | 非成员可读取小组成员邮箱等信息 | GROUP-PERM-001-3 | 需求待确认 / 权限与隐私风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-FILE-001 | 系统允许上传并保存零字节文件 | FILE-009-B | 需求待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
+| RISK-DISC-MENTION-001 | 讨论区允许用户提及自己 | DISC-MENTION-003 | 业务规则待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
+| RISK-DISC-MENTION-002 | 后端不校验mention用户真实性和成员关系 | DISC-MENTION-004 | 真实性校验风险候选 | 待确认 | 待确认 | 待需求确认 |
+| RISK-DISC-MENTION-003 | 重复mention和重复消息不去重 | DISC-MENTION-005 | 业务规则待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
 
 ## BUG-LR-001：重复用户名或邮箱注册返回 500
 
@@ -504,7 +507,7 @@ C 已登录但不属于 group 31。使用 C 的有效登录状态直接调用普
 | 项目 | 内容 |
 | --- | --- |
 | 所属模块 | 讨论区、成员权限 |
-| 关联场景 | DISC-007、DISC-008 |
+| 关联场景 | DISC-007、DISC-008、DISC-MENTION-006 |
 | 问题性质 | 已确认缺陷 |
 | 严重程度 | 高 |
 | 优先级 | P0 |
@@ -538,6 +541,7 @@ C 已登录但不属于 group 31。使用 C 的有效登录状态直接调用普
 - group_members新增 `group_id=31/user_id=26/role=成员`。
 - 自动加入使用中文 `成员`，与邀请接受流程写入的英文 `member` 不一致。
 - 任意已登录用户知道group id后，可以跨组读取讨论并绕过邀请加入小组，影响隐私和成员关系完整性。
+- DISC-MENTION-006 使用带 `@[demo_user](20)` 标记的消息再次复现相同结果：discussion id 137落库，C再次被自动加入group 31；测试后异常成员关系已清理。
 
 ### 代码关联
 
@@ -554,6 +558,10 @@ GET只校验登录，未调用成员访问检查；POST发现没有成员记录�
 ![BUG-DISC-001：非成员消息真实落库](./screenshots/DISC-008-nonmember-message-sql.png)
 
 ![BUG-DISC-001：后端自动新增成员关系](./screenshots/DISC-008-nonmember-autojoin-sql.png)
+
+![BUG-DISC-001补充证据：非成员发送mention返回200](./screenshots/DISC-MENTION-006-nonmember-post-200.png)
+
+![BUG-DISC-001补充证据：非成员被自动加入小组](./screenshots/DISC-MENTION-006-auto-join-sql.png)
 
 ## BUG-DISC-002：Socket.IO缺少认证与房间成员授权
 
@@ -944,13 +952,108 @@ multer 仅配置磁盘存储和文件名，没有 `fileFilter`、MIME/扩展名�
 
 ![RISK-FILE-001：零字节文件真实落库](./screenshots/FILE-009-zero-byte-sql.png)
 
+### RISK-DISC-MENTION-001：讨论区允许用户提及自己
+
+#### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 讨论区 `@` 提及 |
+| 关联场景 | DISC-MENTION-003 |
+| 问题性质 | 业务规则待确认 / 风险候选 |
+| 严重程度 | 待确认 |
+| 优先级 | 待确认 |
+| 状态 | 待需求确认 |
+
+#### 实际执行结果
+
+- A 输入 `@qa` 时，候选列表包含当前账号 `qa_user01`。
+- A 成功发送 `@[qa_user01](21) selfmention20260909_003`。
+- 请求成功，页面按 mention 样式高亮自己。
+
+#### 风险与待确认事项
+
+当前没有明确需求禁止用户提及自己。该行为可能没有协作价值，但也不会自然构成功能错误，因此不判 Bug；需要产品确认候选列表是否应排除当前用户。
+
+#### 测试证据
+
+![RISK-DISC-MENTION-001：候选出现当前用户](./screenshots/DISC-MENTION-003-self-suggestion-ui.png)
+
+![RISK-DISC-MENTION-001：自我提及发送成功](./screenshots/DISC-MENTION-003-self-mention.png)
+
+### RISK-DISC-MENTION-002：后端不校验mention用户真实性和成员关系
+
+#### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 讨论区 `@` 提及、数据真实性 |
+| 关联场景 | DISC-MENTION-004 |
+| 问题性质 | 真实性校验风险候选 |
+| 严重程度 | 待确认 |
+| 优先级 | 待确认 |
+| 状态 | 待需求确认 |
+
+#### 实际执行结果
+
+- 前端候选列表正确排除了非成员 C 和不存在的用户名。
+- A 绕过页面直接 POST `@[qa_nonmember01](26) mention20260909_004`，接口返回 200，页面高亮，SQL id 133 完整落库。
+- A 直接 POST `@[不存在用户](999999) mention20260909_004b`，接口同样返回 200，页面高亮，SQL id 134 完整落库。
+- 两种情况都没有创建 notifications 记录。
+
+#### 风险与待确认事项
+
+后端和展示层把 mention 标记当作可信文本，未验证用户是否存在、显示名和 ID 是否匹配、用户是否属于当前小组。当前 `@` 只承担文本高亮，不会触发通知或权限动作，因此先作为真实性校验风险候选；若以后 mention 参与通知或权限流程，应提升处理优先级。
+
+#### 代码关联
+
+讨论 POST 只对完整 content 执行 `trim()` 后落库；页面展示仅用正则解析 `@[显示名](id)`，见 [`server/index.js`](../server/index.js#L2454) 和 [`src/pages/GroupDetail.jsx`](../src/pages/GroupDetail.jsx#L749)。
+
+#### 测试证据
+
+![RISK-DISC-MENTION-002：非成员不在前端候选](./screenshots/DISC-MENTION-004-nonmember-not-in-suggestions.png)
+
+![RISK-DISC-MENTION-002：伪造非成员mention成功](./screenshots/DISC-MENTION-004-forged-nonmember-mention-api-ui.png)
+
+![RISK-DISC-MENTION-002：伪造不存在用户mention成功](./screenshots/DISC-MENTION-004-forged-missing-user-api-ui.png)
+
+### RISK-DISC-MENTION-003：重复mention和重复消息不去重
+
+#### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 讨论区 `@` 提及、重复输入 |
+| 关联场景 | DISC-MENTION-005 |
+| 问题性质 | 业务规则待确认 / 风险候选 |
+| 严重程度 | 待确认 |
+| 优先级 | 待确认 |
+| 状态 | 待需求确认 |
+
+#### 实际执行结果
+
+- 同一消息可连续选择两次 B，两个 `@[demo_user](20)` 均完整保存和高亮。
+- 完全相同的消息再次 POST 仍返回 200。
+- SQL id 135、136 内容相同，证明系统没有重复消息去重。
+- 由于 mention 不生成 notifications，重复发送也没有产生重复 mention 通知。
+
+#### 风险与待确认事项
+
+当前没有明确要求去重同一接收者，也没有要求阻止用户连续发送相同文本。该行为可能造成讨论噪声，但在需求确认前不判 Bug。
+
+#### 测试证据
+
+![RISK-DISC-MENTION-003：两个相同mention发送成功](./screenshots/DISC-MENTION-005-duplicate-mention-send-200.png)
+
+![RISK-DISC-MENTION-003：重复消息形成两条记录](./screenshots/DISC-MENTION-005-duplicate-message-sql.png)
+
 ## 3. 问题统计
 
 | 问题分类 | 数量 |
 | --- | ---: |
 | 已确认缺陷 | 17 |
 | 业务规则缺口 / 可疑缺陷 | 1 |
-| 需求待确认 / 权限与隐私风险候选 | 2 |
-| **问题记录合计** | **20** |
+| 需求待确认 / 权限与隐私风险候选 | 5 |
+| **问题记录合计** | **23** |
 
-17个已确认缺陷中，高严重程度8个、中严重程度9个。另有3个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口，RISK-GM-001为成员信息权限与隐私风险候选，RISK-FILE-001为零字节文件规则待确认。文件模块按根因归并为7个缺陷：FILE-005、006、012、013、014的普通REST权限问题合并为BUG-FILE-001；FILE-014的宽格式问题同时归入BUG-FILE-005；FILE-010的危险类型与公开静态访问分别归入BUG-FILE-004和BUG-FILE-003。零字节上传、TXT在浏览器直接打开、管理员预览和销毁、重复文件名及分页均未在缺少需求或没有实测时判为Bug。所有问题均未修改代码；当前也没有执行修复后的回归测试。
+17个已确认缺陷中，高严重程度8个、中严重程度9个。另有6个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口；RISK-GM-001、RISK-FILE-001以及3个RISK-DISC-MENTION记录均属于需求待确认 / 风险候选。DISC-MENTION-006只是再次证明BUG-DISC-001，不新增确认缺陷；DISC-MENTION-002验证当前没有mention专用通知，符合现有设计且不登记问题。自我提及、mention真实性、重复mention与重复消息分别涉及不同业务或数据真实性问题，因此记录为3个独立风险候选。所有问题均未修改代码；当前也没有执行修复后的回归测试。
