@@ -2,7 +2,7 @@
 
 ## 1. 报告范围
 
-本报告记录当前已经实际执行的登录、注册、小组管理、成员权限、任务管理和讨论实时消息测试中发现的问题。登录注册结果见 [`test-execution-login-register.md`](./test-execution-login-register.md)，小组管理结果见 [`test-execution-groups.md`](./test-execution-groups.md)，邀请与成员权限结果见 [`test-execution-group-members.md`](./test-execution-group-members.md)，任务管理结果见 [`test-execution-tasks.md`](./test-execution-tasks.md)，讨论与实时消息结果见 [`test-execution-discussions.md`](./test-execution-discussions.md)。未执行场景和仅通过源码推测的问题不列入本报告；没有明确需求依据的问题会标注为“业务规则缺口 / 可疑缺陷”或“需求待确认 / 权限与隐私风险候选”。
+本报告记录当前已经实际执行的登录、注册、小组管理、成员权限、任务管理、讨论实时消息和文件资料共享测试中发现的问题。登录注册结果见 [`test-execution-login-register.md`](./test-execution-login-register.md)，小组管理结果见 [`test-execution-groups.md`](./test-execution-groups.md)，邀请与成员权限结果见 [`test-execution-group-members.md`](./test-execution-group-members.md)，任务管理结果见 [`test-execution-tasks.md`](./test-execution-tasks.md)，讨论与实时消息结果见 [`test-execution-discussions.md`](./test-execution-discussions.md)，文件模块结果见 [`test-execution-files.md`](./test-execution-files.md)。未执行场景和仅通过源码推测的问题不列入本报告；没有明确需求依据的问题会标注为“业务规则缺口 / 可疑缺陷”或“需求待确认 / 权限与隐私风险候选”。
 
 | 记录编号 | 问题标题 | 关联场景 | 问题性质 | 严重程度 | 优先级 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -16,8 +16,16 @@
 | BUG-DISC-001 | 讨论REST接口缺少小组成员授权校验 | DISC-007、DISC-008 | 已确认缺陷 | 高 | P0 | 待修复 |
 | BUG-DISC-002 | Socket.IO缺少认证与房间成员授权 | DISC-006 | 已确认缺陷 | 高 | P0 | 待修复 |
 | BUG-DISC-003 | 讨论group id及资源存在性校验不完整 | DISC-011、DISC-012 | 已确认缺陷 | 中 | P2 | 待修复 |
+| BUG-FILE-001 | 普通文件REST接口缺少认证、小组成员与资源所有权授权 | FILE-005、FILE-006、FILE-012、FILE-013、FILE-014 | 已确认缺陷 | 高 | P0 | 待修复 |
+| BUG-FILE-002 | 上传接口信任客户端uploader_id，允许匿名伪造资源归属 | FILE-007 | 已确认缺陷 | 高 | P0 | 待修复 |
+| BUG-FILE-003 | 公开uploads静态资源缺少认证与小组授权 | FILE-008；FILE-010增强影响 | 已确认缺陷 | 高 | P0 | 待修复 |
+| BUG-FILE-004 | 文件类型与MIME安全校验缺失 | FILE-010 | 已确认缺陷 | 高 | P0 | 待修复 |
+| BUG-FILE-005 | groupId与fileId参数格式校验过宽 | FILE-011-B、FILE-014 | 已确认缺陷 | 中 | P1 | 待修复 |
+| BUG-FILE-006 | 上传失败后未回滚物理文件 | FILE-011-A | 已确认缺陷 | 中 | P1 | 待修复 |
+| BUG-FILE-007 | 资料集锦获取链接使用错误origin | FILE-004-B | 已确认缺陷 | 中 | P1 | 待修复 |
 | BUG-GR-001 | 系统允许创建重复名称的小组 | GROUP-003 | 业务规则缺口 / 可疑缺陷 | 低（待确认） | P3 | 待产品确认 |
 | RISK-GM-001 | 非成员可读取小组成员邮箱等信息 | GROUP-PERM-001-3 | 需求待确认 / 权限与隐私风险候选 | 待确认 | 待确认 | 待需求确认 |
+| RISK-FILE-001 | 系统允许上传并保存零字节文件 | FILE-009-B | 需求待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
 
 ## BUG-LR-001：重复用户名或邮箱注册返回 500
 
@@ -635,6 +643,238 @@ GET和POST都使用 `Number.parseInt`；GET随后直接查询 discussions，没�
 
 ![BUG-DISC-003：不存在小组GET和POST语义不一致](./screenshots/DISC-012-missing-group-api.png)
 
+## BUG-FILE-001：普通文件REST接口缺少认证、小组成员与资源所有权授权
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 文件列表、上传、删除、成员权限 |
+| 关联场景 | FILE-005、FILE-006、FILE-012、FILE-013、FILE-014 |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 高 |
+| 优先级 | P0 |
+| 状态 | 待修复 |
+
+### 缺陷描述与实际结果
+
+普通 `group_files` REST 接口没有统一执行登录、小组成员和资源所有权校验，前端隐藏按钮无法形成有效的服务端权限边界：
+
+- C 不是 group 31 成员，仍可 GET 文件列表并获得 3 条资料；
+- C 可向 group 31 上传，SQL id 17 和物理文件均真实写入；
+- B 看不到 A 文件的删除按钮，但直接 DELETE id 13 返回 200；
+- C 可删除 B 的 id 14；
+- 匿名用户可删除 id 20。以上删除均影响数据库和物理文件。
+
+### 预期结果
+
+- 列表、上传和删除均应先验证登录身份。
+- 调用者应属于目标小组；删除还应按明确规则校验上传者、组长或管理员身份。
+- 未登录返回 401，无组权限返回 403，不得读写数据库或物理文件。
+
+### 代码关联
+
+普通上传、列表和删除路由没有使用 `requireAuthUser`，删除逻辑也没有校验当前用户与文件的关系，见 [`server/index.js`](../server/index.js#L2632)。FILE-014 同时暴露 file id 格式校验问题，另记为 BUG-FILE-005。
+
+### 测试证据
+
+![BUG-FILE-001：非成员读取文件列表返回200](./screenshots/FILE-005-nonmember-list-api.png)
+
+![BUG-FILE-001：非成员上传记录落库](./screenshots/FILE-006-nonmember-upload-sql.png)
+
+![BUG-FILE-001：普通成员删除他人文件返回200](./screenshots/FILE-012-member-delete-other-api.png)
+
+![BUG-FILE-001：非成员删除成员文件返回200](./screenshots/FILE-013-nonmember-delete-api.png)
+
+![BUG-FILE-001：匿名删除返回200](./screenshots/FILE-014-anonymous-prefixed-delete-api.png)
+
+## BUG-FILE-002：上传接口信任客户端uploader_id，允许匿名伪造资源归属
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 文件上传、身份可信性 |
+| 关联场景 | FILE-007 |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 高 |
+| 优先级 | P0 |
+| 状态 | 待修复 |
+
+### 缺陷描述与实际结果
+
+无痕窗口中 `localStorage` 没有 token。匿名调用者在 multipart 请求中传入 `uploader_id=21` 后，上传接口返回 200，数据库把文件记录归属到 `qa_user01`，物理文件也真实生成。外部调用者可以伪造合法用户发布资料。
+
+### 预期结果
+
+上传者身份必须从服务端验证后的 token 获得，不能接受客户端指定的任意用户 ID；匿名请求应返回 401，且不写数据库和磁盘。
+
+### 代码关联
+
+上传路由直接解析 `req.body.uploader_id`，未从认证上下文取得用户 ID，见 [`server/index.js`](../server/index.js#L2632)。接口缺少认证的共性同时归入 BUG-FILE-001，本条聚焦身份伪造根因。
+
+### 测试证据
+
+![BUG-FILE-002：匿名伪造上传者并上传](./screenshots/FILE-007-anonymous-spoof-upload.png)
+
+![BUG-FILE-002：伪造归属写入数据库](./screenshots/FILE-007-spoof-sql.png)
+
+## BUG-FILE-003：公开uploads静态资源缺少认证与小组授权
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 文件获取、静态资源权限 |
+| 关联场景 | FILE-008；FILE-010增强影响 |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 高 |
+| 优先级 | P0 |
+| 状态 | 待修复 |
+
+### 缺陷描述与实际结果
+
+未登录用户只要知道静态 URL，就能直接访问 `http://localhost:3001/uploads/...`。FILE-008 中无痕窗口得到 HTTP 200 和完整组内 TXT 内容；FILE-010 还确认上传的 HTML 会从同一公开目录以 `text/html` 提供。
+
+### 预期结果
+
+组内文件下载应经过认证和小组授权，未登录用户不能仅凭可猜测或泄露的 URL 获得内容。危险类型控制属于另一根因，另记为 BUG-FILE-004。
+
+### 代码关联
+
+服务将整个上传目录直接挂载为 Express 静态资源，见 [`server/index.js`](../server/index.js#L46)，该路径不经过业务 API 的认证与成员检查。
+
+### 测试证据
+
+![BUG-FILE-003：未登录静态访问返回200](./screenshots/FILE-008-anonymous-static-download.png)
+
+![BUG-FILE-003：HTML通过公开静态URL渲染](./screenshots/FILE-010-dangerous-type-static.png)
+
+## BUG-FILE-004：文件类型与MIME安全校验缺失
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 文件上传、内容安全 |
+| 关联场景 | FILE-010 |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 高 |
+| 优先级 | P0 |
+| 状态 | 待修复 |
+
+### 缺陷描述与实际结果
+
+无害测试 HTML 文件上传返回 200，数据库记录 id 16、size 65；随后静态服务以 `text/html; charset=utf-8` 返回并由浏览器正常渲染。当前上传入口没有文件类型白名单或 MIME 限制。
+
+### 预期结果
+
+应依据项目允许的资料类型建立服务端校验；至少不应把用户上传的主动内容直接作为同源可执行 HTML 提供。允许类型范围仍应由需求明确，但当前“任意类型上传并公开渲染”的安全结果已经实际确认。
+
+### 代码关联
+
+multer 仅配置磁盘存储和文件名，没有 `fileFilter`、MIME/扩展名校验或大小限制，见 [`server/index.js`](../server/index.js#L48)。
+
+### 测试证据
+
+![BUG-FILE-004：HTML上传成功](./screenshots/FILE-010-dangerous-type-upload.png)
+
+![BUG-FILE-004：HTML作为text/html公开提供](./screenshots/FILE-010-dangerous-type-static.png)
+
+## BUG-FILE-005：groupId与fileId参数格式校验过宽
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 文件API、路径参数校验 |
+| 关联场景 | FILE-011-B、FILE-014 |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 中 |
+| 优先级 | P1 |
+| 状态 | 待修复 |
+
+### 缺陷描述与实际结果
+
+- 上传路径中的 `groupId=31abc` 被当作 31，接口返回 200，SQL id 19 和物理文件均写入 group 31。
+- 删除路径中的 `fileId=20abc` 被当作 20，匿名请求成功删除真实 id 20。
+
+### 预期结果
+
+路径 ID 应匹配完整的正整数字符串；包含字母或其他后缀时应返回 400，并且不得读写数据库或文件系统。
+
+### 代码关联
+
+普通文件路由对 `groupId` 和 `fileId` 使用 `Number.parseInt`，未验证原字符串被完整解析，见 [`server/index.js`](../server/index.js#L2632) 和 [`server/index.js`](../server/index.js#L2715)。FILE-014 的匿名删除权限问题同时归入 BUG-FILE-001。
+
+### 测试证据
+
+![BUG-FILE-005：31abc写入group31](./screenshots/FILE-011-prefixed-group-sql.png)
+
+![BUG-FILE-005：20abc命中真实文件并删除](./screenshots/FILE-014-anonymous-prefixed-delete-api.png)
+
+## BUG-FILE-006：上传失败后未回滚物理文件
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 文件上传、DB与文件系统一致性 |
+| 关联场景 | FILE-011-A |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 中 |
+| 优先级 | P1 |
+| 状态 | 待修复 |
+
+### 缺陷描述与实际结果
+
+向 `/api/groups/abc/files` 上传时，接口对非法 group id 返回 400，数据库没有有效记录，但 multer 在参数校验前已经把文件写入 `server/uploads`，留下 `1788941472033-file_test_invalid_group_20260908.txt` 孤儿文件。
+
+### 预期结果
+
+参数应在可行范围内先校验；若文件已经写入而后续校验或数据库操作失败，服务端应删除临时物理文件，使数据库和磁盘保持一致。
+
+### 代码关联
+
+`upload.single('file')` 在路由处理函数解析 `groupId` 之前运行，错误分支没有清理 `req.file`，见 [`server/index.js`](../server/index.js#L2632)。
+
+### 测试证据
+
+![BUG-FILE-006：非法group id返回400](./screenshots/FILE-011-invalid-group-api.png)
+
+![BUG-FILE-006：失败请求留下孤儿文件](./screenshots/FILE-011-invalid-group-orphan.png)
+
+## BUG-FILE-007：资料集锦获取链接使用错误origin
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 资料集锦、文件获取 |
+| 关联场景 | FILE-004-B |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 中 |
+| 优先级 | P1 |
+| 状态 | 待修复 |
+
+### 缺陷描述与实际结果
+
+在 `/all-files` 点击“获取”后，浏览器访问 `http://localhost:5173/uploads/...`。该 URL 返回 HTTP 200 和 Vite 前端 `index.html`，并非目标 TXT 内容；正确静态文件服务实际位于 3001。
+
+### 预期结果
+
+“获取”应生成正确的后端文件 URL，返回所选文件内容；前端不应把相对 `file_url` 直接解析到自身 origin。
+
+### 代码关联
+
+资料集锦页面把数据库返回的相对 `file.file_url` 直接赋给 `<a href>`，见 [`src/pages/AllFiles.jsx`](../src/pages/AllFiles.jsx#L156)。小组详情页已有拼接后端基地址的下载 URL 构造逻辑，可以作为行为对照。
+
+### 测试证据
+
+![BUG-FILE-007：资料集锦搜索正常](./screenshots/FILE-004-all-files-search-ui.png)
+
+![BUG-FILE-007：获取链接返回前端index.html](./screenshots/FILE-004-all-files-download-wrong-port.png)
+
 ## 2. 需求待确认 / 权限与隐私风险候选
 
 ### RISK-GM-001：非成员可读取小组成员邮箱等信息
@@ -675,13 +915,42 @@ GET和POST都使用 `Number.parseInt`；GET随后直接查询 discussions，没�
 
 ![RISK-GM-001：非成员读取成员列表及邮箱](./screenshots/GROUP-PERM-001-members-email-exposed-200.png)
 
+### RISK-FILE-001：系统允许上传并保存零字节文件
+
+#### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 文件上传、输入边界 |
+| 关联场景 | FILE-009-B |
+| 问题性质 | 需求待确认 / 风险候选 |
+| 严重程度 | 待确认 |
+| 优先级 | 待确认 |
+| 状态 | 待需求确认 |
+
+#### 实际执行结果
+
+- B 上传 `file_test_zero_20260908.txt`，POST 返回 200。
+- 页面显示文件大小 0 KB。
+- SQL 确认 `group_files` id 15、group id 31、uploader id 20、`file_size=0`。
+
+#### 风险与待确认事项
+
+项目当前没有明确规定是否允许空文件，因此本结果不判 Fail，也不作为已确认缺陷。需要确认零字节资料是否具备业务价值，以及是否应在前端和后端统一拒绝。
+
+#### 测试证据
+
+![RISK-FILE-001：零字节上传返回200](./screenshots/FILE-009-zero-byte-upload-200.png)
+
+![RISK-FILE-001：零字节文件真实落库](./screenshots/FILE-009-zero-byte-sql.png)
+
 ## 3. 问题统计
 
 | 问题分类 | 数量 |
 | --- | ---: |
-| 已确认缺陷 | 10 |
+| 已确认缺陷 | 17 |
 | 业务规则缺口 / 可疑缺陷 | 1 |
-| 需求待确认 / 权限与隐私风险候选 | 1 |
-| **问题记录合计** | **12** |
+| 需求待确认 / 权限与隐私风险候选 | 2 |
+| **问题记录合计** | **20** |
 
-10个已确认缺陷中，高严重程度4个、中严重程度6个。另有2个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口，RISK-GM-001为成员信息权限与隐私风险候选。DISC-007与DISC-008按REST成员授权根因合并为BUG-DISC-001；DISC-011与DISC-012按group id和资源存在性校验根因合并为BUG-DISC-003，没有机械拆分。成功POST返回200、允许重复文本、没有编辑/删除/回复、`@成员`不生成通知、历史无分页和未读不持久化均未作为Bug。所有问题均未修改代码；当前也没有执行修复后的回归测试。
+17个已确认缺陷中，高严重程度8个、中严重程度9个。另有3个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口，RISK-GM-001为成员信息权限与隐私风险候选，RISK-FILE-001为零字节文件规则待确认。文件模块按根因归并为7个缺陷：FILE-005、006、012、013、014的普通REST权限问题合并为BUG-FILE-001；FILE-014的宽格式问题同时归入BUG-FILE-005；FILE-010的危险类型与公开静态访问分别归入BUG-FILE-004和BUG-FILE-003。零字节上传、TXT在浏览器直接打开、管理员预览和销毁、重复文件名及分页均未在缺少需求或没有实测时判为Bug。所有问题均未修改代码；当前也没有执行修复后的回归测试。
