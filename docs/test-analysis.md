@@ -211,7 +211,7 @@
 | C 查看/发送 A 小组讨论 | 403 | **实际可读取，发送时还会自动加入小组** |
 | C 查看/上传/删除 A 小组实际文件 | 403 | **已实测均可成功；普通文件接口没有认证、成员和资源授权校验** |
 | C 查看/新增链接型资料 | 403 | `shared_files` 接口已有成员校验 |
-| 用户处理别人的邀请或通知 | 403/404 | 通知接口按当前用户 ID 校验，逻辑较完整 |
+| 用户处理别人的邀请或通知 | 403/404 | **已实际验证**通知接口按当前用户 ID 正常拦截 |
 | 非组长邀请或移除成员 | 403 | 后端有组长校验 |
 
 ### 3.8 消息通知
@@ -229,6 +229,8 @@
 | 异常 | 对普通系统消息执行接受操作 | 返回不支持该类型 |
 | 边界 | 没有通知 | 正常显示空状态，未读数为 0 |
 | 边界 | 通知轮询期间快速切换页面 | 不应重复定时器或产生卸载后更新错误 |
+
+通知模块已完成 `NOTIF-001`～`NOTIF-010` 共10个实际执行场景，结果为Pass 8、Fail 1、Risk 1，详见 [`test-execution-notifications.md`](./test-execution-notifications.md)。已验证邀请通知、用户数据隔离、全部标记已读、拒绝/接受状态转换、重复响应保护、自己的通知删除、他人通知对象级权限和无token认证拦截；同时实际确认数字前缀非法notification id会被宽松解析为真实ID。pending invite在`is_read=1`后仍计入“未读消息”只记录为业务语义风险，等待需求确认。
 
 ### 3.9 个人资料与密码
 
@@ -301,17 +303,18 @@
 16. **未配置 `AUTH_TOKEN_SECRET` 时，每次服务启动会生成随机密钥。** 服务重启后已有 token 全部失效。依据：[`server/index.js`](../server/index.js#L26)。
 17. **接口错误状态码不统一。** 任务、小组等部分接口在失败时仍返回 HTTP 200，仅在 JSON 中写 `success: false`，不利于前端和接口测试准确判断。TASK-013-B～F 已实际确认任务参数缺失、资源不存在及非法类型场景的这一表现。
 18. **资料集锦“获取”链接使用错误 origin。** FILE-004-B 已实际确认链接跳到前端 5173 的 `/uploads` 并返回 Vite `index.html`，而真实文件服务位于后端 3001。依据：[`src/pages/AllFiles.jsx`](../src/pages/AllFiles.jsx#L156)。
+19. **通知 ID 参数使用宽松整数解析。** NOTIF-009 已实际确认路径参数`72abc`被解析为真实通知id 72并继续进入业务类型判断，而不是作为非法ID直接拒绝。详见 [`test-execution-notifications.md`](./test-execution-notifications.md)。
 
 ### 完整性和可维护性问题
 
-19. **两套资料功能没有统一。** 小组详情和资料集锦使用 `group_files`；全局资料库使用 `shared_files`，但当前前端没有新增链接型资料的入口。
-20. **`@成员` 没有通知闭环。** DISC-MENTION-002 已实际确认当前只做候选、高亮和普通实时消息，不生成被提及者 notification。现有需求未明确要求专用通知，因此这是功能边界说明，不登记 Bug。
-21. **数据库建表脚本已过时。** [`server/create-tables.sql`](../server/create-tables.sql) 使用 `groups` 表和两种任务状态，而运行时代码使用 `groups_table`、三种状态和更多表。只执行该 SQL 无法得到当前应用所需完整结构。
-22. **API 地址写死为 `http://localhost:3001`。** 部署到其他地址时前端不能自动连接正确后端。依据：[`src/api/client.js`](../src/api/client.js#L1)。
-23. **存在未接入路由的页面文件。** `Home.jsx`、`AdminDashboard.jsx` 容易让维护者误认为仍在使用。
-24. **代码规范检查当前不通过。** `npm run lint` 结果为 34 个 error、1 个 warning，主要包括 Node 全局变量未在 ESLint 中配置、未使用变量、Effect 中同步更新状态和 Hook 依赖问题。它不一定代表项目无法启动，但说明仓库目前不能宣称“质量检查全部通过”。
-25. **没有测试脚本或测试代码。** `package.json` 只有 dev、build、lint、preview，没有 `test` 命令；仓库也没有测试用例目录。
-26. **README 仍是基础 Vite 说明。** 缺少项目功能、环境配置、数据库初始化、启动方式、测试账号和已知限制，不利于面试官复现项目。
+20. **两套资料功能没有统一。** 小组详情和资料集锦使用 `group_files`；全局资料库使用 `shared_files`，但当前前端没有新增链接型资料的入口。
+21. **`@成员` 没有通知闭环。** DISC-MENTION-002 已实际确认当前只做候选、高亮和普通实时消息，不生成被提及者 notification。现有需求未明确要求专用通知，因此这是功能边界说明，不登记 Bug。
+22. **数据库建表脚本已过时。** [`server/create-tables.sql`](../server/create-tables.sql) 使用 `groups` 表和两种任务状态，而运行时代码使用 `groups_table`、三种状态和更多表。只执行该 SQL 无法得到当前应用所需完整结构。
+23. **API 地址写死为 `http://localhost:3001`。** 部署到其他地址时前端不能自动连接正确后端。依据：[`src/api/client.js`](../src/api/client.js#L1)。
+24. **存在未接入路由的页面文件。** `Home.jsx`、`AdminDashboard.jsx` 容易让维护者误认为仍在使用。
+25. **代码规范检查当前不通过。** `npm run lint` 结果为 34 个 error、1 个 warning，主要包括 Node 全局变量未在 ESLint 中配置、未使用变量、Effect 中同步更新状态和 Hook 依赖问题。它不一定代表项目无法启动，但说明仓库目前不能宣称“质量检查全部通过”。
+26. **没有测试脚本或测试代码。** `package.json` 只有 dev、build、lint、preview，没有 `test` 命令；仓库也没有测试用例目录。
+27. **README 仍是基础 Vite 说明。** 缺少项目功能、环境配置、数据库初始化、启动方式、测试账号和已知限制，不利于面试官复现项目。
 
 ## 6. 哪些内容适合写进软件测试简历
 

@@ -2,7 +2,7 @@
 
 ## 1. 报告范围
 
-本报告记录当前已经实际执行的登录、注册、小组管理、成员权限、任务管理、讨论实时消息和文件资料共享测试中发现的问题。登录注册结果见 [`test-execution-login-register.md`](./test-execution-login-register.md)，小组管理结果见 [`test-execution-groups.md`](./test-execution-groups.md)，邀请与成员权限结果见 [`test-execution-group-members.md`](./test-execution-group-members.md)，任务管理结果见 [`test-execution-tasks.md`](./test-execution-tasks.md)，讨论与实时消息结果见 [`test-execution-discussions.md`](./test-execution-discussions.md)，文件模块结果见 [`test-execution-files.md`](./test-execution-files.md)。未执行场景和仅通过源码推测的问题不列入本报告；没有明确需求依据的问题会标注为“业务规则缺口 / 可疑缺陷”或“需求待确认 / 权限与隐私风险候选”。
+本报告记录当前已经实际执行的登录、注册、小组管理、成员权限、任务管理、讨论实时消息、文件资料共享和通知测试中发现的问题。登录注册结果见 [`test-execution-login-register.md`](./test-execution-login-register.md)，小组管理结果见 [`test-execution-groups.md`](./test-execution-groups.md)，邀请与成员权限结果见 [`test-execution-group-members.md`](./test-execution-group-members.md)，任务管理结果见 [`test-execution-tasks.md`](./test-execution-tasks.md)，讨论与实时消息结果见 [`test-execution-discussions.md`](./test-execution-discussions.md)，文件模块结果见 [`test-execution-files.md`](./test-execution-files.md)，通知模块结果见 [`test-execution-notifications.md`](./test-execution-notifications.md)。未执行场景和仅通过源码推测的问题不列入本报告；没有明确需求依据的问题会标注为“业务规则缺口 / 可疑缺陷”或“需求待确认 / 权限与隐私风险候选”。
 
 | 记录编号 | 问题标题 | 关联场景 | 问题性质 | 严重程度 | 优先级 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -23,12 +23,14 @@
 | BUG-FILE-005 | groupId与fileId参数格式校验过宽 | FILE-011-B、FILE-014 | 已确认缺陷 | 中 | P1 | 待修复 |
 | BUG-FILE-006 | 上传失败后未回滚物理文件 | FILE-011-A | 已确认缺陷 | 中 | P1 | 待修复 |
 | BUG-FILE-007 | 资料集锦获取链接使用错误origin | FILE-004-B | 已确认缺陷 | 中 | P1 | 待修复 |
+| BUG-NOTIF-001 | notification id使用宽松整数解析 | NOTIF-009 | 已确认缺陷 | 中 | P1 | 待修复 |
 | BUG-GR-001 | 系统允许创建重复名称的小组 | GROUP-003 | 业务规则缺口 / 可疑缺陷 | 低（待确认） | P3 | 待产品确认 |
 | RISK-GM-001 | 非成员可读取小组成员邮箱等信息 | GROUP-PERM-001-3 | 需求待确认 / 权限与隐私风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-FILE-001 | 系统允许上传并保存零字节文件 | FILE-009-B | 需求待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-DISC-MENTION-001 | 讨论区允许用户提及自己 | DISC-MENTION-003 | 业务规则待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-DISC-MENTION-002 | 后端不校验mention用户真实性和成员关系 | DISC-MENTION-004 | 真实性校验风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-DISC-MENTION-003 | 重复mention和重复消息不去重 | DISC-MENTION-005 | 业务规则待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
+| RISK-NOTIF-001 | pending邀请已读后仍计入“未读消息” | NOTIF-003 | 业务语义待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
 
 ## BUG-LR-001：重复用户名或邮箱注册返回 500
 
@@ -883,6 +885,50 @@ multer 仅配置磁盘存储和文件名，没有 `fileFilter`、MIME/扩展名�
 
 ![BUG-FILE-007：获取链接返回前端index.html](./screenshots/FILE-004-all-files-download-wrong-port.png)
 
+## BUG-NOTIF-001：notification id使用宽松整数解析
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 关联场景 | NOTIF-009 |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 中 |
+| 优先级 | P1 |
+| 当前状态 | 待修复 |
+
+### 缺陷描述与复现步骤
+
+通知respond接口使用宽松整数解析路径参数。A拥有一条真实的id 72、类型为`invite_result`的通知时，使用有效登录状态提交：
+
+```http
+POST /api/notifications/72abc/respond
+Content-Type: application/json
+
+{"action":"accept"}
+```
+
+### 预期结果
+
+- `72abc`不是合法整数ID，应直接返回400和“无效的通知ID”。
+- 不应查询或进入真实id 72的业务处理分支。
+
+### 实际结果与影响
+
+- 接口返回400，但消息是“暂不支持该类型通知”。
+- 该消息只会在查询到真实id 72并识别出其`invite_result`类型后返回，证明`72abc`已经被解析成72。
+- 本轮实测的是respond接口。源码中DELETE通知接口使用相同的`Number.parseInt`方式，因此也存在同类风险，但DELETE数字前缀行为尚未单独实测，不能算作额外执行结果。
+- 宽松ID解析可能让格式错误的URL意外命中真实资源，降低接口参数边界的可靠性。
+
+### 代码关联
+
+- [`server/index.js`](../server/index.js#L2260)：respond接口直接使用`Number.parseInt(req.params.id, 10)`。
+- [`server/index.js`](../server/index.js#L2393)：DELETE接口使用相同解析方式，属于源码风险延伸。
+
+### 测试证据
+
+![BUG-NOTIF-001：72abc进入真实id 72的业务类型分支](./screenshots/NOTIF-009-prefixed-id-loose-parse.png)
+
 ## 2. 需求待确认 / 权限与隐私风险候选
 
 ### RISK-GM-001：非成员可读取小组成员邮箱等信息
@@ -1047,13 +1093,39 @@ multer 仅配置磁盘存储和文件名，没有 `fileFilter`、MIME/扩展名�
 
 ![RISK-DISC-MENTION-003：重复消息形成两条记录](./screenshots/DISC-MENTION-005-duplicate-message-sql.png)
 
+### RISK-NOTIF-001：pending邀请已读后仍计入“未读消息”
+
+#### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 关联场景 | NOTIF-003 |
+| 问题性质 | 业务语义待确认 / 风险候选 |
+| 当前状态 | 待需求确认 |
+
+#### 实际结果
+
+- 进入通知页后，`PUT /api/notifications/mark-read`返回200。
+- SQL确认pending invite的`is_read`已经持久化为1，刷新后仍为1。
+- 页面“未读消息”和侧边栏红点仍显示1。
+
+#### 判定边界
+
+当前前端把pending邀请和未读通知同时计入红点。如果红点表示“待处理事项”，该行为可以成立；但页面文案明确写“未读消息”，与`is_read=1`存在语义冲突。需求尚未明确，因此不判确认缺陷。
+
+#### 测试证据
+
+![RISK-NOTIF-001：mark-read成功后页面仍显示未读1](./screenshots/NOTIF-003-mark-read-ui-count-mismatch.png)
+
+![RISK-NOTIF-001：数据库is_read已经为1](./screenshots/NOTIF-003-mark-read-sql.png)
+
 ## 3. 问题统计
 
 | 问题分类 | 数量 |
 | --- | ---: |
-| 已确认缺陷 | 17 |
+| 已确认缺陷 | 18 |
 | 业务规则缺口 / 可疑缺陷 | 1 |
-| 需求待确认 / 权限与隐私风险候选 | 5 |
-| **问题记录合计** | **23** |
+| 需求待确认 / 权限与隐私风险候选 | 6 |
+| **问题记录合计** | **25** |
 
-17个已确认缺陷中，高严重程度8个、中严重程度9个。另有6个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口；RISK-GM-001、RISK-FILE-001以及3个RISK-DISC-MENTION记录均属于需求待确认 / 风险候选。DISC-MENTION-006只是再次证明BUG-DISC-001，不新增确认缺陷；DISC-MENTION-002验证当前没有mention专用通知，符合现有设计且不登记问题。自我提及、mention真实性、重复mention与重复消息分别涉及不同业务或数据真实性问题，因此记录为3个独立风险候选。所有问题均未修改代码；当前也没有执行修复后的回归测试。
+18个已确认缺陷中，高严重程度8个、中严重程度10个。另有7个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口；RISK-GM-001、RISK-FILE-001、3个RISK-DISC-MENTION记录和RISK-NOTIF-001均属于需求待确认 / 风险候选。NOTIF-009新增BUG-NOTIF-001；NOTIF-003只记录通知未读语义风险，不计确认缺陷。所有问题均未修改代码；当前也没有执行修复后的回归测试。
