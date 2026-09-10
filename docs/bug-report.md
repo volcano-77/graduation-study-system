@@ -2,7 +2,7 @@
 
 ## 1. 报告范围
 
-本报告记录当前已经实际执行的登录、注册、小组管理、成员权限、任务管理、讨论实时消息、文件资料共享和通知测试中发现的问题。登录注册结果见 [`test-execution-login-register.md`](./test-execution-login-register.md)，小组管理结果见 [`test-execution-groups.md`](./test-execution-groups.md)，邀请与成员权限结果见 [`test-execution-group-members.md`](./test-execution-group-members.md)，任务管理结果见 [`test-execution-tasks.md`](./test-execution-tasks.md)，讨论与实时消息结果见 [`test-execution-discussions.md`](./test-execution-discussions.md)，文件模块结果见 [`test-execution-files.md`](./test-execution-files.md)，通知模块结果见 [`test-execution-notifications.md`](./test-execution-notifications.md)。未执行场景和仅通过源码推测的问题不列入本报告；没有明确需求依据的问题会标注为“业务规则缺口 / 可疑缺陷”或“需求待确认 / 权限与隐私风险候选”。
+本报告记录当前已经实际执行的登录、注册、小组管理、成员权限、任务管理、讨论实时消息、文件资料共享、通知和 Dashboard 联动测试中发现的问题。登录注册结果见 [`test-execution-login-register.md`](./test-execution-login-register.md)，小组管理结果见 [`test-execution-groups.md`](./test-execution-groups.md)，邀请与成员权限结果见 [`test-execution-group-members.md`](./test-execution-group-members.md)，任务管理结果见 [`test-execution-tasks.md`](./test-execution-tasks.md)，讨论与实时消息结果见 [`test-execution-discussions.md`](./test-execution-discussions.md)，文件模块结果见 [`test-execution-files.md`](./test-execution-files.md)，通知模块结果见 [`test-execution-notifications.md`](./test-execution-notifications.md)，Dashboard 结果见 [`test-execution-dashboard.md`](./test-execution-dashboard.md)。未执行场景和仅通过源码推测的问题不列入本报告；没有明确需求依据的问题会标注为“业务规则缺口 / 可疑缺陷”或“需求待确认 / 权限与隐私风险候选”。
 
 | 记录编号 | 问题标题 | 关联场景 | 问题性质 | 严重程度 | 优先级 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -27,6 +27,7 @@
 | BUG-GR-001 | 系统允许创建重复名称的小组 | GROUP-003 | 业务规则缺口 / 可疑缺陷 | 低（待确认） | P3 | 待产品确认 |
 | RISK-GM-001 | 非成员可读取小组成员邮箱等信息 | GROUP-PERM-001-3 | 需求待确认 / 权限与隐私风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-FILE-001 | 系统允许上传并保存零字节文件 | FILE-009-B | 需求待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
+| RISK-FILE-002 | 文件上传未配置单文件大小限制 | FILE-017 | 需求待确认 / 安全风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-DISC-MENTION-001 | 讨论区允许用户提及自己 | DISC-MENTION-003 | 业务规则待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-DISC-MENTION-002 | 后端不校验mention用户真实性和成员关系 | DISC-MENTION-004 | 真实性校验风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-DISC-MENTION-003 | 重复mention和重复消息不去重 | DISC-MENTION-005 | 业务规则待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
@@ -998,6 +999,41 @@ Content-Type: application/json
 
 ![RISK-FILE-001：零字节文件真实落库](./screenshots/FILE-009-zero-byte-sql.png)
 
+### RISK-FILE-002：文件上传未配置单文件大小限制
+
+#### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 文件上传、容量边界与资源安全 |
+| 关联场景 | FILE-017 |
+| 问题性质 | 需求待确认 / 安全风险候选 |
+| 严重程度 | 待确认 |
+| 优先级 | 待确认 |
+| 状态 | 待需求确认 |
+
+#### 实际执行结果
+
+- A 上传长度为 20971520 bytes（20 MiB）的 `FILE-017-large-20MB.bin`。
+- `POST /api/groups/31/files` 返回 200，页面显示 20.00 MB。
+- SQL 确认 `group_files` id 22 的 `file_size=20971520`；物理目录中对应文件长度也为 20971520 bytes。
+- 当前 Multer 使用 `multer({ storage })`，未配置 `limits.fileSize` 或等价单文件大小限制。
+- 测试后通过正常删除接口清理，数据库 id 22 和物理文件均不存在。
+
+#### 风险与待确认事项
+
+项目需求没有规定文件大小上限，因此本场景不判 Fail，也不作为已确认缺陷。若部署环境长期开放上传，缺少单文件限制可能造成磁盘空间耗尽、服务资源占用或拒绝服务风险；建议先确认业务允许的最大文件大小，再在前后端实施一致限制和明确错误提示。
+
+#### 测试证据
+
+![RISK-FILE-002：20 MiB文件上传返回200](./screenshots/FILE-017-large-file-upload-200.png)
+
+![RISK-FILE-002：数据库记录完整大小](./screenshots/FILE-017-large-file-sql.png)
+
+![RISK-FILE-002：磁盘文件长度一致](./screenshots/FILE-017-large-file-disk.png)
+
+![RISK-FILE-002：删除后数据库无记录](./screenshots/FILE-017-large-file-delete-sql.png)
+
 ### RISK-DISC-MENTION-001：讨论区允许用户提及自己
 
 #### 基本信息
@@ -1125,7 +1161,7 @@ Content-Type: application/json
 | --- | ---: |
 | 已确认缺陷 | 18 |
 | 业务规则缺口 / 可疑缺陷 | 1 |
-| 需求待确认 / 权限与隐私风险候选 | 6 |
-| **问题记录合计** | **25** |
+| 需求待确认 / 权限与隐私风险候选 | 7 |
+| **问题记录合计** | **26** |
 
-18个已确认缺陷中，高严重程度8个、中严重程度10个。另有7个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口；RISK-GM-001、RISK-FILE-001、3个RISK-DISC-MENTION记录和RISK-NOTIF-001均属于需求待确认 / 风险候选。NOTIF-009新增BUG-NOTIF-001；NOTIF-003只记录通知未读语义风险，不计确认缺陷。所有问题均未修改代码；当前也没有执行修复后的回归测试。
+18个已确认缺陷中，高严重程度8个、中严重程度10个。另有8个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口；RISK-GM-001、RISK-FILE-001、RISK-FILE-002、3个RISK-DISC-MENTION记录和RISK-NOTIF-001均属于需求待确认 / 风险候选。FILE-017只记录上传容量风险，Dashboard 本轮9个场景全部通过且没有新增问题。所有问题均未修改代码；当前也没有执行修复后的回归测试。
