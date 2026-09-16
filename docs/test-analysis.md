@@ -269,6 +269,8 @@
 
 普通用户 Dashboard 已完成 `DASH-001`～`DASH-009` 共9个实际执行场景，全部为 Pass，详见 [`test-execution-dashboard.md`](./test-execution-dashboard.md)。已验证非成员空基线、owner/member 数据范围、加入与移除小组、任务新增/状态迁移/删除、最新资料上传与删除，以及页面刷新后的持久化一致性。实际结果确认 Dashboard 使用页面加载时快照：页面保持打开时不会自动更新，刷新或重新进入后才重新请求数据；这符合当前实现，本轮不判 Bug。
 
+管理员模块已完成 `ADMIN-001`～`ADMIN-008` 共8个实际执行场景，结果为Pass 5、Fail 2、Risk 1，详见 [`test-execution-admin.md`](./test-execution-admin.md)。已验证管理员登录与路由隔离、概览统计、最新动态、活跃小组排行、正常用户CRUD、小组编辑、普通用户对管理员读写接口的403拦截，以及强制解散后的数据库关联清理。实际确认管理员新增用户接口同样可写入非法邮箱和1位密码，用户ID接受数字前缀字符串，以及强制解散小组后物理上传文件残留；第二管理员创建、列表隐藏和重启降级之间的不一致暂按风险候选记录。`ADMIN-001`同时完成原`LOGIN-002`验证，但累计只计算一次。
+
 ## 4. 建议的基础测试执行顺序
 
 这是适合初学者的手工测试顺序：
@@ -298,27 +300,28 @@
 
 8. **文件上传没有大小和类型限制。** `multer` 只配置了磁盘保存位置，没有 `limits` 或 `fileFilter`。FILE-010 已实际确认 HTML 可上传并公开渲染；FILE-017 进一步确认 20 MiB 文件可返回200并完整写入数据库和磁盘。由于需求未定义最大文件大小，容量问题记录为 RISK-FILE-002，不直接判功能缺陷。依据：[`server/index.js`](../server/index.js#L48)。
 9. **失败上传可能留下孤儿文件。** FILE-011-A 已实际确认：`groupId=abc` 虽返回 400，但 multer 先写入的文件没有清理。另有 FILE-011-B、FILE-014 实际确认 `31abc`、`20abc` 会被宽松解析为有效 ID。详见 [`test-execution-files.md`](./test-execution-files.md)。
-10. **删除小组/用户没有显式删除物理上传文件。** 数据库外键可能清除 `group_files` 记录，但磁盘中的文件不会随之删除。管理员强制解散也有相同问题。
+10. **管理员强制解散小组后残留物理上传文件。** ADMIN-008已实际确认：group 33及其成员、任务、讨论、通知、共享资料和上传文件数据库记录全部清零，但 `server/uploads` 仍保留对应TXT，登记为BUG-ADMIN-002。测试后已手工清理该孤儿文件。删除用户时是否同样遗留物理文件仍属于源码风险，尚未单独实测。
 11. **注册重复错误码与前端约定不一致。** 注册页专门处理 409，但普通注册接口把重复用户名/邮箱也返回 500，用户得到的提示和接口语义不准确。依据：[`src/pages/Register.jsx`](../src/pages/Register.jsx#L33)、[`server/index.js`](../server/index.js#L499)。
-12. **注册和旧用户更新接口都缺少邮箱格式校验。** REGISTER-010确认注册接口可创建非法邮箱账号；PROF-005进一步确认旧 `PUT /api/users/:id` 可把 `not-an-email` 写入已有用户。两个场景合并为BUG-LR-003。
-13. **个人资料后端没有执行与前端一致的新密码最小长度限制。** PWD-005已实际确认直接请求可设置1位密码并成功登录，与REGISTER-011同属BUG-LR-002；PWD-004还确认改密前token在改密后仍有效，因注销规则未明确只记录RISK-PROF-001。
-14. **管理员角色逻辑不一致。** 管理员页面允许创建或修改其他 `admin` 用户，但服务启动时会把用户名不是 `admin` 的用户全部改回普通用户。依据：[`server/index.js`](../server/index.js#L380)。
+12. **注册、旧用户更新和管理员新增用户接口都缺少邮箱格式校验。** REGISTER-010确认注册接口可创建非法邮箱账号；PROF-005确认旧 `PUT /api/users/:id` 可写入 `not-an-email`；ADMIN-005又确认管理员新增用户接口返回201并真实落库。三个入口合并为BUG-LR-003。
+13. **多个用户入口缺少一致的后端密码最小长度校验。** REGISTER-011、PWD-005和ADMIN-005分别确认注册、个人改密、管理员新增用户均可产生1位密码并成功登录，按同一根因归入BUG-LR-002；PWD-004还确认改密前token在改密后仍有效，因注销规则未明确只记录RISK-PROF-001。
+14. **第二管理员生命周期不一致。** ADMIN-006已实际确认页面/API可创建其他admin，数据库role为admin且重启前可登录后台，但用户列表不显示；服务重启后又自动降级为user。多管理员需求未明确，因此登记RISK-ADMIN-001，不直接判Bug。依据：[`server/index.js`](../server/index.js#L380)。
 15. **默认演示账号密码固定。** 适合本地作品演示，但如果直接部署到公网，任何人都可能登录演示管理员账号。不能把当前版本描述为生产级安全系统。
 16. **未配置 `AUTH_TOKEN_SECRET` 时，每次服务启动会生成随机密钥。** 服务重启后已有 token 全部失效。依据：[`server/index.js`](../server/index.js#L26)。
 17. **接口错误状态码不统一。** 任务、小组等部分接口在失败时仍返回 HTTP 200，仅在 JSON 中写 `success: false`。TASK-013-B～F 已确认任务接口问题；PROF-005又确认旧用户更新接口命中重复邮箱唯一约束时返回HTTP 200和“服务器错误”，单独登记BUG-PROF-001。
 18. **资料集锦“获取”链接使用错误 origin。** FILE-004-B 已实际确认链接跳到前端 5173 的 `/uploads` 并返回 Vite `index.html`，而真实文件服务位于后端 3001。依据：[`src/pages/AllFiles.jsx`](../src/pages/AllFiles.jsx#L156)。
 19. **通知 ID 参数使用宽松整数解析。** NOTIF-009 已实际确认路径参数`72abc`被解析为真实通知id 72并继续进入业务类型判断，而不是作为非法ID直接拒绝。详见 [`test-execution-notifications.md`](./test-execution-notifications.md)。
+20. **管理员用户 ID 参数使用宽松整数解析。** ADMIN-005已实际确认 `PUT /api/admin/users/29abc` 返回200并修改真实id 29用户，登记为BUG-ADMIN-001。该结果说明同类参数边界问题不只存在于通知和普通文件接口。
 
 ### 完整性和可维护性问题
 
-20. **两套资料功能没有统一。** 小组详情和资料集锦使用 `group_files`；全局资料库使用 `shared_files`，但当前前端没有新增链接型资料的入口。
-21. **`@成员` 没有通知闭环。** DISC-MENTION-002 已实际确认当前只做候选、高亮和普通实时消息，不生成被提及者 notification。现有需求未明确要求专用通知，因此这是功能边界说明，不登记 Bug。
-22. **数据库建表脚本已过时。** [`server/create-tables.sql`](../server/create-tables.sql) 使用 `groups` 表和两种任务状态，而运行时代码使用 `groups_table`、三种状态和更多表。只执行该 SQL 无法得到当前应用所需完整结构。
-23. **API 地址写死为 `http://localhost:3001`。** 部署到其他地址时前端不能自动连接正确后端。依据：[`src/api/client.js`](../src/api/client.js#L1)。
-24. **存在未接入路由的页面文件。** `Home.jsx`、`AdminDashboard.jsx` 容易让维护者误认为仍在使用。
-25. **代码规范检查当前不通过。** `npm run lint` 结果为 34 个 error、1 个 warning，主要包括 Node 全局变量未在 ESLint 中配置、未使用变量、Effect 中同步更新状态和 Hook 依赖问题。它不一定代表项目无法启动，但说明仓库目前不能宣称“质量检查全部通过”。
-26. **没有测试脚本或测试代码。** `package.json` 只有 dev、build、lint、preview，没有 `test` 命令；仓库也没有测试用例目录。
-27. **README 仍是基础 Vite 说明。** 缺少项目功能、环境配置、数据库初始化、启动方式、测试账号和已知限制，不利于面试官复现项目。
+21. **两套资料功能没有统一。** 小组详情和资料集锦使用 `group_files`；全局资料库使用 `shared_files`，但当前前端没有新增链接型资料的入口。
+22. **`@成员` 没有通知闭环。** DISC-MENTION-002 已实际确认当前只做候选、高亮和普通实时消息，不生成被提及者 notification。现有需求未明确要求专用通知，因此这是功能边界说明，不登记 Bug。
+23. **数据库建表脚本已过时。** [`server/create-tables.sql`](../server/create-tables.sql) 使用 `groups` 表和两种任务状态，而运行时代码使用 `groups_table`、三种状态和更多表。只执行该 SQL 无法得到当前应用所需完整结构。
+24. **API 地址写死为 `http://localhost:3001`。** 部署到其他地址时前端不能自动连接正确后端。依据：[`src/api/client.js`](../src/api/client.js#L1)。
+25. **存在未接入路由的页面文件。** `Home.jsx`、`AdminDashboard.jsx` 容易让维护者误认为仍在使用。
+26. **代码规范检查当前不通过。** `npm run lint` 结果为 34 个 error、1 个 warning，主要包括 Node 全局变量未在 ESLint 中配置、未使用变量、Effect 中同步更新状态和 Hook 依赖问题。它不一定代表项目无法启动，但说明仓库目前不能宣称“质量检查全部通过”。
+27. **没有测试脚本或测试代码。** `package.json` 只有 dev、build、lint、preview，没有 `test` 命令；仓库也没有测试用例目录。
+28. **README 仍是基础 Vite 说明。** 缺少项目功能、环境配置、数据库初始化、启动方式、测试账号和已知限制，不利于面试官复现项目。
 
 ## 6. 哪些内容适合写进软件测试简历
 
