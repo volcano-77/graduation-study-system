@@ -361,9 +361,10 @@
 | 讨论区 `@` 提及补充 | 6 | 2 | 1 | 3 |
 | 通知模块 | 10 | 8 | 1 | 1 |
 | Dashboard 数据联动 | 9 | 9 | 0 | 0 |
-| **累计** | **106** | **65** | **33** | **8** |
+| 个人资料与密码 | 10 | 7 | 2 | 1 |
+| **累计** | **116** | **72** | **35** | **9** |
 
-截至 Dashboard 与 FILE-017 补测完成，项目累计记录18个已确认缺陷、1个业务规则缺口 / 可疑缺陷、7个需求待确认 / 风险候选，共26条问题记录。Dashboard 详情见 [`test-execution-dashboard.md`](./test-execution-dashboard.md)，FILE-017 详情见 [`test-execution-files.md`](./test-execution-files.md)。
+截至个人资料与密码模块完成，项目累计记录19个已确认缺陷、1个业务规则缺口 / 可疑缺陷、8个需求待确认 / 风险候选，共28条问题记录。详情见 [`test-execution-profile.md`](./test-execution-profile.md)。
 
 ## 9. 本轮结论
 

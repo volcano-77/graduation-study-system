@@ -2,13 +2,14 @@
 
 ## 1. 报告范围
 
-本报告记录当前已经实际执行的登录、注册、小组管理、成员权限、任务管理、讨论实时消息、文件资料共享、通知和 Dashboard 联动测试中发现的问题。登录注册结果见 [`test-execution-login-register.md`](./test-execution-login-register.md)，小组管理结果见 [`test-execution-groups.md`](./test-execution-groups.md)，邀请与成员权限结果见 [`test-execution-group-members.md`](./test-execution-group-members.md)，任务管理结果见 [`test-execution-tasks.md`](./test-execution-tasks.md)，讨论与实时消息结果见 [`test-execution-discussions.md`](./test-execution-discussions.md)，文件模块结果见 [`test-execution-files.md`](./test-execution-files.md)，通知模块结果见 [`test-execution-notifications.md`](./test-execution-notifications.md)，Dashboard 结果见 [`test-execution-dashboard.md`](./test-execution-dashboard.md)。未执行场景和仅通过源码推测的问题不列入本报告；没有明确需求依据的问题会标注为“业务规则缺口 / 可疑缺陷”或“需求待确认 / 权限与隐私风险候选”。
+本报告记录当前已经实际执行的登录、注册、小组管理、成员权限、任务管理、讨论实时消息、文件资料共享、通知、Dashboard 及个人资料与密码测试中发现的问题。各模块结果见对应 `test-execution-*.md`；个人资料与密码结果见 [`test-execution-profile.md`](./test-execution-profile.md)。未执行场景和仅通过源码推测的问题不列入本报告；没有明确需求依据的问题会标注为“业务规则缺口 / 可疑缺陷”或“需求待确认 / 权限与隐私风险候选”。
 
 | 记录编号 | 问题标题 | 关联场景 | 问题性质 | 严重程度 | 优先级 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
 | BUG-LR-001 | 重复用户名或邮箱注册返回 500 | REGISTER-003、REGISTER-004 | 已确认缺陷 | 中 | P2 | 待修复 |
-| BUG-LR-002 | 允许 1 位密码注册并成功登录 | REGISTER-011 | 已确认缺陷 | 高 | P1 | 待修复 |
-| BUG-LR-003 | 后端缺少邮箱格式校验，可绕过前端创建非法邮箱账号 | REGISTER-010 | 已确认缺陷 | 中 | P1 | 待修复 |
+| BUG-LR-002 | 后端允许设置 1 位密码并成功登录 | REGISTER-011、PWD-005 | 已确认缺陷 | 高 | P1 | 待修复 |
+| BUG-LR-003 | 后端用户接口缺少邮箱格式校验，可写入非法邮箱 | REGISTER-010、PROF-005 | 已确认缺陷 | 中 | P1 | 待修复 |
+| BUG-PROF-001 | 旧用户资料接口数据库失败仍返回 HTTP 200 | PROF-005 | 已确认缺陷 | 中 | P2 | 待修复 |
 | BUG-TASK-001 | 普通任务接口缺少小组成员权限校验 | TASK-006～TASK-010 | 已确认缺陷 | 高 | P0 | 待修复 |
 | BUG-TASK-002 | 后端允许纯空格任务内容落库 | TASK-012 | 已确认缺陷 | 中 | P1 | 待修复 |
 | BUG-TASK-003 | 普通任务接口错误状态码语义不正确 | TASK-013-B～TASK-013-E | 已确认缺陷 | 中 | P2 | 待修复 |
@@ -28,6 +29,7 @@
 | RISK-GM-001 | 非成员可读取小组成员邮箱等信息 | GROUP-PERM-001-3 | 需求待确认 / 权限与隐私风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-FILE-001 | 系统允许上传并保存零字节文件 | FILE-009-B | 需求待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-FILE-002 | 文件上传未配置单文件大小限制 | FILE-017 | 需求待确认 / 安全风险候选 | 待确认 | 待确认 | 待需求确认 |
+| RISK-PROF-001 | 密码修改后既有 token 仍然有效 | PWD-004 | 会话安全规则待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-DISC-MENTION-001 | 讨论区允许用户提及自己 | DISC-MENTION-003 | 业务规则待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-DISC-MENTION-002 | 后端不校验mention用户真实性和成员关系 | DISC-MENTION-004 | 真实性校验风险候选 | 待确认 | 待确认 | 待需求确认 |
 | RISK-DISC-MENTION-003 | 重复mention和重复消息不去重 | DISC-MENTION-005 | 业务规则待确认 / 风险候选 | 待确认 | 待确认 | 待需求确认 |
@@ -100,14 +102,14 @@
 
 ![BUG-LR-001：重复邮箱注册返回 500](./screenshots/REGISTER-004-500.png)
 
-## BUG-LR-002：允许 1 位密码注册并成功登录
+## BUG-LR-002：后端允许设置 1 位密码并成功登录
 
 ### 基本信息
 
 | 项目 | 内容 |
 | --- | --- |
-| 所属模块 | 注册、登录 |
-| 关联用例 | REGISTER-011 |
+| 所属模块 | 注册、登录、个人密码修改 |
+| 关联用例 | REGISTER-011、PWD-005 |
 | 严重程度 | 高 |
 | 优先级 | P1 |
 | 状态 | 待修复 |
@@ -147,7 +149,8 @@
 - 1 位密码注册成功，`register` 返回 201。
 - 随后使用该账号和密码 `1` 登录成功，`login` 返回 200。
 - 页面进入“学习空间总览”，显示当前用户 `qa_pwd1`。
-- 用例判定为 Fail。
+- PWD-005 中绕过个人设置页面直接调用 `PUT /api/user/profile`，接口同样接受1位新密码并返回200；随后使用该密码登录成功。
+- 注册和个人改密两个独立入口均确认缺少后端最小长度校验；两个场景均判定为 Fail，按同一根因合并记录。
 
 ### 影响
 
@@ -156,7 +159,7 @@
 
 ### 代码关联
 
-注册页面只有必填校验，没有最小长度限制，见 [`src/pages/Register.jsx`](../src/pages/Register.jsx#L57)；注册接口只判断密码是否为空，没有检查长度，见 [`server/index.js`](../server/index.js#L476)。
+注册页面只有必填校验，注册接口只判断密码是否为空；个人设置页面要求新密码至少4位，但 profile 后端只判断是否非空。两个后端入口都没有执行最小长度校验，见 [`server/index.js`](../server/index.js#L476) 和 [`server/index.js`](../server/index.js#L1318)。
 
 ### 测试证据
 
@@ -168,14 +171,22 @@
 
 ![BUG-LR-002：1 位密码账号登录成功](./screenshots/REGISTER-011-login-200.png)
 
-## BUG-LR-003：后端缺少邮箱格式校验，可绕过前端创建非法邮箱账号
+个人改密接口接受1位密码并返回200：
+
+![BUG-LR-002：个人改密接口接受1位密码](./screenshots/PWD-005-one-char-password-api.png)
+
+使用修改后的1位密码可以实际登录：
+
+![BUG-LR-002：个人改密后的1位密码登录成功](./screenshots/PWD-005-one-char-password-login-success.png)
+
+## BUG-LR-003：后端用户接口缺少邮箱格式校验，可写入非法邮箱
 
 ### 基本信息
 
 | 项目 | 内容 |
 | --- | --- |
-| 所属模块 | 注册接口 |
-| 关联用例 | REGISTER-010 |
+| 所属模块 | 注册接口、旧用户资料更新接口 |
+| 关联用例 | REGISTER-010、PROF-005 |
 | 问题性质 | 已确认缺陷 |
 | 严重程度 | 中 |
 | 优先级 | P1 |
@@ -184,7 +195,7 @@
 
 ### 缺陷描述
 
-注册页面会利用浏览器的 `type="email"` 校验阻止明显的非法邮箱提交，但直接调用注册接口时可以绕过该校验。后端接受 `invalid-email` 并创建账号；补充 SQL 查询已确认该账号真实写入 `users` 表，说明关键输入校验只存在于客户端，接口本身没有执行邮箱格式校验，并会造成非法邮箱数据落库。
+注册页面会利用浏览器的 `type="email"` 校验阻止明显的非法邮箱提交，但注册接口和旧 `PUT /api/users/:id` 更新接口都没有独立校验邮箱格式。REGISTER-010 已确认注册接口可创建非法邮箱账号；PROF-005 又确认旧资料接口接受 `not-an-email` 并写入已有用户。两者属于同一后端输入校验缺失，合并记录。
 
 ### 前置条件
 
@@ -221,7 +232,8 @@
 - 响应体为 `{ success: true }`。
 - SQL 查询确认 `qa_bad_email_api` 已存在于 `users` 表，邮箱为 `invalid-email`，角色为 `user`。
 - 非法邮箱用户不只是收到成功响应，而是已经真实写入数据库。
-- REGISTER-010 判定为 Fail。
+- PROF-005 中旧资料接口返回200和 `success:true`，SQL确认 id 26 的邮箱被更新为 `not-an-email`。
+- REGISTER-010 与 PROF-005 均判定为 Fail；PROF-005 后已恢复原邮箱。
 
 ### 影响
 
@@ -230,7 +242,7 @@
 
 ### 代码关联
 
-普通注册接口只检查用户名、邮箱和密码是否为空，随后直接写入邮箱，没有校验邮箱格式，见 [`server/index.js`](../server/index.js#L478)。本条缺陷以 REGISTER-010 的实际接口响应为确认依据，不是仅由静态分析推断。
+普通注册接口只检查字段是否为空，旧用户资料接口则直接把请求中的 `email` 写入 `users`，两处都没有邮箱格式校验，见 [`server/index.js`](../server/index.js#L478) 和 [`server/index.js`](../server/index.js#L1755)。本条缺陷已有两个独立接口的实际证据，不是仅由静态分析推断。
 
 ### 测试证据
 
@@ -241,6 +253,51 @@ Console 中显示向注册接口提交 `invalid-email` 后，状态码为 201，
 SQL 查询结果确认 `qa_bad_email_api` 的非法邮箱数据已经写入 `users` 表：
 
 ![BUG-LR-003：非法邮箱账号已确认落库](./screenshots/REGISTER-SQL-user-data-validation.png)
+
+旧资料接口接受非法邮箱并返回200：
+
+![BUG-LR-003：旧资料接口接受非法邮箱](./screenshots/PROF-005-invalid-email-api.png)
+
+SQL确认非法邮箱真实写入现有用户：
+
+![BUG-LR-003：旧资料接口非法邮箱落库](./screenshots/PROF-005-invalid-email-sql.png)
+
+## BUG-PROF-001：旧用户资料接口数据库失败仍返回 HTTP 200
+
+### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 个人资料、旧用户更新接口 |
+| 关联场景 | PROF-005 |
+| 问题性质 | 已确认缺陷 |
+| 严重程度 | 中 |
+| 优先级 | P2 |
+| 状态 | 待修复 |
+
+### 缺陷描述与实际结果
+
+C调用 `PUT /api/users/26`，把邮箱改为已由A使用的 `qa.user01@example.com`。数据库唯一约束正确阻止了重复邮箱写入，但接口的异常分支仍返回HTTP 200，响应体为 `{ success:false, message:'服务器错误' }`。
+
+### 预期结果
+
+- 唯一字段冲突应返回409 Conflict，并给出可理解的重复邮箱提示；
+- 服务器内部异常应返回500；
+- 不应使用HTTP 200表达失败结果。
+
+### 影响
+
+- 前端和接口测试不能只根据HTTP状态码可靠判断更新是否成功；
+- 业务冲突会被笼统表示为服务器错误；
+- 调用方如果忽略JSON中的 `success`，可能错误地认为资料更新成功。
+
+### 代码关联
+
+旧 `PUT /api/users/:id` 接口的 catch 分支使用 `res.json(...)`，没有设置错误状态码，也没有单独处理 `ER_DUP_ENTRY`，见 [`server/index.js`](../server/index.js#L1755)。
+
+### 测试证据
+
+![BUG-PROF-001：重复邮箱失败但返回HTTP 200](./screenshots/PROF-005-duplicate-email-api.png)
 
 ## BUG-GR-001：系统允许创建重复名称的小组
 
@@ -932,6 +989,33 @@ Content-Type: application/json
 
 ## 2. 需求待确认 / 权限与隐私风险候选
 
+### RISK-PROF-001：密码修改后既有 token 仍然有效
+
+#### 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 所属模块 | 个人密码修改、登录会话 |
+| 关联场景 | PWD-004 |
+| 问题性质 | 会话安全规则待确认 / 风险候选 |
+| 严重程度 | 待确认 |
+| 优先级 | 待确认 |
+| 状态 | 待需求确认 |
+
+#### 实际执行结果
+
+- 保留C修改密码前签发的旧token；
+- 密码修改成功后继续使用该token请求 `GET /api/user/profile`；
+- 接口返回HTTP 200和 `success:true`，旧会话未被撤销。
+
+#### 判定边界
+
+当前token只按签名和过期时间验证，没有密码版本、会话表或改密时间校验。项目需求未明确规定“修改密码后注销全部既有会话”，因此本场景不直接判确认缺陷。如果产品要求在密码泄露后通过改密收回旧会话，则该行为应升级为安全缺陷。
+
+#### 测试证据
+
+![RISK-PROF-001：改密前token在改密后仍返回200](./screenshots/PWD-004-old-token-still-valid.png)
+
 ### RISK-GM-001：非成员可读取小组成员邮箱等信息
 
 #### 基本信息
@@ -1159,9 +1243,9 @@ Content-Type: application/json
 
 | 问题分类 | 数量 |
 | --- | ---: |
-| 已确认缺陷 | 18 |
+| 已确认缺陷 | 19 |
 | 业务规则缺口 / 可疑缺陷 | 1 |
-| 需求待确认 / 权限与隐私风险候选 | 7 |
-| **问题记录合计** | **26** |
+| 需求待确认 / 权限与隐私风险候选 | 8 |
+| **问题记录合计** | **28** |
 
-18个已确认缺陷中，高严重程度8个、中严重程度10个。另有8个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口；RISK-GM-001、RISK-FILE-001、RISK-FILE-002、3个RISK-DISC-MENTION记录和RISK-NOTIF-001均属于需求待确认 / 风险候选。FILE-017只记录上传容量风险，Dashboard 本轮9个场景全部通过且没有新增问题。所有问题均未修改代码；当前也没有执行修复后的回归测试。
+19个已确认缺陷中，高严重程度8个、中严重程度11个。另有9个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口；RISK-PROF-001、RISK-GM-001、RISK-FILE-001、RISK-FILE-002、3个RISK-DISC-MENTION记录和RISK-NOTIF-001均属于需求待确认 / 风险候选。PWD-005扩展BUG-LR-002，PROF-005的非法邮箱扩展BUG-LR-003；只有旧资料接口错误状态码新增BUG-PROF-001，因此本轮新增确认缺陷1个、风险候选1个。所有问题均未修改代码；当前也没有执行修复后的回归测试。
