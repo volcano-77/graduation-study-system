@@ -1248,7 +1248,7 @@ Content-Type: application/json
 | 修复前复现批次 | `20260917132931`，真实后端 `http://localhost:3001` |
 | 修复后验证批次 | `20260917133226`，真实后端 `http://localhost:3001` |
 | 修改文件 | `server/index.js`，仅修改管理员强制解散小组处理器 |
-| 修复 commit | 待正式提交后回填 |
+| 修复 commit | [`482c6bfd377d157a52d82660d99be725331f3fae`](https://github.com/volcano-77/graduation-study-system/commit/482c6bfd377d157a52d82660d99be725331f3fae) — `fix: remove group files on admin delete` |
 
 **根因与修复前流程：** `DELETE /api/admin/groups/:id` 原来只读取目标小组id，在数据库事务中显式删除notifications、group_members、discussions、tasks、shared_files后删除groups_table；group_files依靠 `ON DELETE CASCADE` 自动清理。处理器从未在级联发生前读取 `group_files.file_url`，也没有调用文件系统删除，事务提交后数据库已失去物理文件路径。现有管理员单文件销毁和普通单文件删除接口则会先按精确记录读取file_url，再以basename定位uploads内文件并调用 `fs.unlinkSync`。
 
