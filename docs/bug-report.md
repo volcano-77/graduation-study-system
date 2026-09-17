@@ -1053,7 +1053,7 @@ Content-Type: application/json
 | 修复日期 | 2026-09-17（UTC+8） |
 | 验证批次 | `20260917053942`，13:39:42～13:39:49 |
 | 修改文件 | `server/index.js`，管理员用户 PUT / DELETE 两处 ID 校验 |
-| 修复 commit | 待提交后补充；本轮未 commit、未 push |
+| 修复 commit | [`0cc03e0c75932d712e0dd79451821c2864844ab6`](https://github.com/volcano-77/graduation-study-system/commit/0cc03e0c75932d712e0dd79451821c2864844ab6) — `fix: validate admin user ids strictly` |
 
 **根因与修复方式：** PUT 和 DELETE 都使用 `Number.parseInt(req.params.id, 10)`，数字前缀会被截取成真实 ID。项目没有可复用的严格 ID helper；本次仅将这两处改为 `Number(req.params.id)`，并同时要求原始参数匹配 `/^[1-9]\d*$/`、转换结果满足 `Number.isSafeInteger()`。非法参数在目标用户查询、更新或删除前返回 HTTP 400、`success:false`、`message:"无效的用户ID"`。鉴权中间件正常读取当前登录管理员不属于目标用户业务查询。没有 GET `/api/admin/users/:id` 接口；现有 GET 为用户列表，不需要添加 ID 校验。
 
