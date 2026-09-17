@@ -23,6 +23,7 @@ const DEFAULT_TASK_STATUS = '待处理';
 const BCRYPT_SALT_ROUNDS = 10;
 const MIN_PASSWORD_LENGTH = 4;
 const BCRYPT_HASH_PATTERN = /^\$2[aby]\$\d{2}\$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const AUTH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET || crypto.randomBytes(32).toString('hex');
 const DEMO_USER_ACCOUNT = {
@@ -171,6 +172,10 @@ function requireAdmin(req, res, next) {
 
 function isValidPasswordLength(password) {
     return password.length >= MIN_PASSWORD_LENGTH;
+}
+
+function isValidEmail(email) {
+    return EMAIL_PATTERN.test(email);
 }
 
 async function ensureColumnExists(tableName, columnName, columnDefinition) {
@@ -490,6 +495,9 @@ async function handleRegister(req, res) {
             message: '昵称、邮箱和密码不能为空'
         });
     }
+    if (!isValidEmail(normalizedEmail)) {
+        return res.status(400).json({ success: false, message: '邮箱格式不正确' });
+    }
     if (!isValidPasswordLength(normalizedPassword)) {
         return res.status(400).json({ success: false, message: `密码至少需要 ${MIN_PASSWORD_LENGTH} 位` });
     }
@@ -591,6 +599,9 @@ app.post('/api/admin/users', requireAuthUser, requireAdmin, async (req, res) => 
     if (!username || !email || !password) {
         return res.status(400).json({ success: false, message: '用户名、邮箱和密码不能为空' });
     }
+    if (!isValidEmail(email)) {
+        return res.status(400).json({ success: false, message: '邮箱格式不正确' });
+    }
     if (!isValidPasswordLength(password)) {
         return res.status(400).json({ success: false, message: `密码至少需要 ${MIN_PASSWORD_LENGTH} 位` });
     }
@@ -646,6 +657,9 @@ app.put('/api/admin/users/:id', requireAuthUser, requireAdmin, async (req, res) 
     }
     if (!username || !email) {
         return res.status(400).json({ success: false, message: '用户名和邮箱不能为空' });
+    }
+    if (!isValidEmail(email)) {
+        return res.status(400).json({ success: false, message: '邮箱格式不正确' });
     }
     if (password && !isValidPasswordLength(password)) {
         return res.status(400).json({ success: false, message: `密码至少需要 ${MIN_PASSWORD_LENGTH} 位` });
@@ -1778,11 +1792,16 @@ app.put('/api/users/:id', requireAuthUser, async (req, res) => {
         return res.status(403).json({ success: false, message: '无权修改该用户信息' });
     }
     const { username, email, motto, major } = req.body;
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+
+    if (!isValidEmail(normalizedEmail)) {
+        return res.status(400).json({ success: false, message: '邮箱格式不正确' });
+    }
     
     try {
         const [result] = await pool.execute(
             'UPDATE users SET username = ?, email = ?, motto = ?, major = ? WHERE id = ?',
-            [username, email, motto, major, userId]
+            [username, normalizedEmail, motto, major, userId]
         );
         
         if (result.affectedRows > 0) {

@@ -1,0 +1,450 @@
+{
+  "bug": "BUG-LR-003",
+  "phase": "before-fix-reproduction",
+  "runId": "20260917130648",
+  "startedAt": "2026-09-17T13:06:48.481Z",
+  "base": "http://localhost:3001",
+  "requests": [
+    {
+      "label": "Admin login",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "admin",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 3,
+          "username": "admin",
+          "email": "admin@example.com",
+          "role": "admin"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Register accepts invalid email",
+      "method": "POST",
+      "path": "/api/register",
+      "body": {
+        "username": "FIX-EMAIL-20260917130648-register",
+        "email": "invalid-20260917130648",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true
+      },
+      "pass": true
+    },
+    {
+      "label": "Register alias accepts invalid email",
+      "method": "POST",
+      "path": "/register",
+      "body": {
+        "username": "FIX-EMAIL-20260917130648-alias",
+        "email": "abc-20260917130648@",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin create accepts invalid email",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "body": {
+        "username": "FIX-EMAIL-20260917130648-admin-create",
+        "email": "invalid-admin-20260917130648",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 43,
+          "username": "FIX-EMAIL-20260917130648-admin-create",
+          "email": "invalid-admin-20260917130648",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Create legacy-update target",
+      "method": "POST",
+      "path": "/api/register",
+      "body": {
+        "username": "FIX-EMAIL-20260917130648-legacy-update",
+        "email": "fix-email-20260917130648-legacy-update@example.invalid",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true
+      },
+      "pass": true
+    },
+    {
+      "label": "Login legacy-update target",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-EMAIL-20260917130648-legacy-update",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 44,
+          "username": "FIX-EMAIL-20260917130648-legacy-update",
+          "email": "fix-email-20260917130648-legacy-update@example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Legacy user update accepts invalid email",
+      "method": "PUT",
+      "path": "/api/users/44",
+      "body": {
+        "username": "FIX-EMAIL-20260917130648-legacy-update",
+        "email": "not-an-email-20260917130648",
+        "motto": "",
+        "major": ""
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 44,
+          "username": "FIX-EMAIL-20260917130648-legacy-update",
+          "email": "not-an-email-20260917130648",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Create admin-edit target",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "body": {
+        "username": "FIX-EMAIL-20260917130648-admin-edit",
+        "email": "fix-email-20260917130648-admin-edit@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 45,
+          "username": "FIX-EMAIL-20260917130648-admin-edit",
+          "email": "fix-email-20260917130648-admin-edit@example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit accepts invalid email",
+      "method": "PUT",
+      "path": "/api/admin/users/45",
+      "body": {
+        "username": "FIX-EMAIL-20260917130648-admin-edit",
+        "email": "missing-at-20260917130648.example.com",
+        "role": "user"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 45,
+          "username": "FIX-EMAIL-20260917130648-admin-edit",
+          "email": "missing-at-20260917130648.example.com",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup reproduced temporary user",
+      "method": "DELETE",
+      "path": "/api/admin/users/41",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup reproduced temporary user",
+      "method": "DELETE",
+      "path": "/api/admin/users/42",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup reproduced temporary user",
+      "method": "DELETE",
+      "path": "/api/admin/users/43",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup reproduced temporary user",
+      "method": "DELETE",
+      "path": "/api/admin/users/44",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup reproduced temporary user",
+      "method": "DELETE",
+      "path": "/api/admin/users/45",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    }
+  ],
+  "sqlChecks": [
+    {
+      "label": "Stored user FIX-EMAIL-20260917130648-register",
+      "query": "SELECT id, username, email, role FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917130648-register"
+      ],
+      "rows": [
+        {
+          "id": 41,
+          "username": "FIX-EMAIL-20260917130648-register",
+          "email": "invalid-20260917130648",
+          "role": "user"
+        }
+      ]
+    },
+    {
+      "label": "Stored user FIX-EMAIL-20260917130648-alias",
+      "query": "SELECT id, username, email, role FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917130648-alias"
+      ],
+      "rows": [
+        {
+          "id": 42,
+          "username": "FIX-EMAIL-20260917130648-alias",
+          "email": "abc-20260917130648@",
+          "role": "user"
+        }
+      ]
+    },
+    {
+      "label": "Stored user FIX-EMAIL-20260917130648-admin-create",
+      "query": "SELECT id, username, email, role FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917130648-admin-create"
+      ],
+      "rows": [
+        {
+          "id": 43,
+          "username": "FIX-EMAIL-20260917130648-admin-create",
+          "email": "invalid-admin-20260917130648",
+          "role": "user"
+        }
+      ]
+    },
+    {
+      "label": "Stored user FIX-EMAIL-20260917130648-legacy-update",
+      "query": "SELECT id, username, email, role FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917130648-legacy-update"
+      ],
+      "rows": [
+        {
+          "id": 44,
+          "username": "FIX-EMAIL-20260917130648-legacy-update",
+          "email": "fix-email-20260917130648-legacy-update@example.invalid",
+          "role": "user"
+        }
+      ]
+    },
+    {
+      "label": "Stored user FIX-EMAIL-20260917130648-legacy-update",
+      "query": "SELECT id, username, email, role FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917130648-legacy-update"
+      ],
+      "rows": [
+        {
+          "id": 44,
+          "username": "FIX-EMAIL-20260917130648-legacy-update",
+          "email": "not-an-email-20260917130648",
+          "role": "user"
+        }
+      ]
+    },
+    {
+      "label": "Stored user FIX-EMAIL-20260917130648-admin-edit",
+      "query": "SELECT id, username, email, role FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917130648-admin-edit"
+      ],
+      "rows": [
+        {
+          "id": 45,
+          "username": "FIX-EMAIL-20260917130648-admin-edit",
+          "email": "fix-email-20260917130648-admin-edit@example.invalid",
+          "role": "user"
+        }
+      ]
+    },
+    {
+      "label": "Stored user FIX-EMAIL-20260917130648-admin-edit",
+      "query": "SELECT id, username, email, role FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917130648-admin-edit"
+      ],
+      "rows": [
+        {
+          "id": 45,
+          "username": "FIX-EMAIL-20260917130648-admin-edit",
+          "email": "missing-at-20260917130648.example.com",
+          "role": "user"
+        }
+      ]
+    },
+    {
+      "label": "Pre-fix reproduction cleanup",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE LEFT(username, 10) = ?",
+      "params": [
+        "FIX-EMAIL-"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "Pre-fix reproduction final baseline",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 21,
+          "afterCount": 21,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    }
+  ],
+  "temporaryUsers": [
+    {
+      "id": 41,
+      "username": "FIX-EMAIL-20260917130648-register"
+    },
+    {
+      "id": 42,
+      "username": "FIX-EMAIL-20260917130648-alias"
+    },
+    {
+      "id": 43,
+      "username": "FIX-EMAIL-20260917130648-admin-create"
+    },
+    {
+      "id": 44,
+      "username": "FIX-EMAIL-20260917130648-legacy-update"
+    },
+    {
+      "id": 45,
+      "username": "FIX-EMAIL-20260917130648-admin-edit"
+    }
+  ],
+  "reproduction": "PASS: every actual email-write handler accepted and stored an invalid email before the fix",
+  "cleanup": "PASS: FIX-EMAIL users = 0; all original rows and fields unchanged",
+  "finishedAt": "2026-09-17T13:06:49.163Z"
+}

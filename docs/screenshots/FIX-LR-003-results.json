@@ -1,0 +1,1692 @@
+{
+  "bug": "BUG-LR-003",
+  "phase": "after-fix-verification",
+  "runId": "20260917131115",
+  "startedAt": "2026-09-17T13:11:15.036Z",
+  "base": "http://localhost:3001",
+  "rule": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+  "sourceSha256": "baa48d21bb972366b73b62ccb978ca627ee465a2c4098c70a3d120a2568cd89f",
+  "requests": [
+    {
+      "label": "Admin login",
+      "category": "valid",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "admin",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 3,
+          "username": "admin",
+          "email": "admin@example.com",
+          "role": "admin"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "register empty email keeps required semantics",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/register",
+      "email": "",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-empty",
+        "email": "",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "昵称、邮箱和密码不能为空"
+      },
+      "pass": true
+    },
+    {
+      "label": "register rejects invalid email 1",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/register",
+      "email": "invalid-email-20260917131115-0",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-bad-0",
+        "email": "invalid-email-20260917131115-0",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "register rejects invalid email 2",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/register",
+      "email": "abc-20260917131115-1@20260917131115-1",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-bad-1",
+        "email": "abc-20260917131115-1@20260917131115-1",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "register rejects invalid email 3",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/register",
+      "email": "@example.com-20260917131115-2",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-bad-2",
+        "email": "@example.com-20260917131115-2",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "register rejects invalid email 4",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/register",
+      "email": "a@b-20260917131115-3",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-bad-3",
+        "email": "a@b-20260917131115-3",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "register rejects invalid email 5",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/register",
+      "email": "a b@example.com-20260917131115-4",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-bad-4",
+        "email": "a b@example.com-20260917131115-4",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "register rejects invalid email 6",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/register",
+      "email": "a@@example.com-20260917131115-5",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-bad-5",
+        "email": "a@@example.com-20260917131115-5",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "register-alias empty email keeps required semantics",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/register",
+      "email": "",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-alias-empty",
+        "email": "",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "昵称、邮箱和密码不能为空"
+      },
+      "pass": true
+    },
+    {
+      "label": "register-alias rejects invalid email 1",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/register",
+      "email": "invalid-email-20260917131115-0",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-alias-bad-0",
+        "email": "invalid-email-20260917131115-0",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "register-alias rejects invalid email 2",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/register",
+      "email": "abc-20260917131115-1@20260917131115-1",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-alias-bad-1",
+        "email": "abc-20260917131115-1@20260917131115-1",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "register-alias rejects invalid email 3",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/register",
+      "email": "@example.com-20260917131115-2",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-alias-bad-2",
+        "email": "@example.com-20260917131115-2",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "register-alias rejects invalid email 4",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/register",
+      "email": "a@b-20260917131115-3",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-alias-bad-3",
+        "email": "a@b-20260917131115-3",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "register-alias rejects invalid email 5",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/register",
+      "email": "a b@example.com-20260917131115-4",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-alias-bad-4",
+        "email": "a b@example.com-20260917131115-4",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "register-alias rejects invalid email 6",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/register",
+      "email": "a@@example.com-20260917131115-5",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-alias-bad-5",
+        "email": "a@@example.com-20260917131115-5",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "admin-create empty email keeps required semantics",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "email": "",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-create-empty",
+        "email": "",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "用户名、邮箱和密码不能为空"
+      },
+      "pass": true
+    },
+    {
+      "label": "admin-create rejects invalid email 1",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "email": "invalid-email-20260917131115-0",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-create-bad-0",
+        "email": "invalid-email-20260917131115-0",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "admin-create rejects invalid email 2",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "email": "abc-20260917131115-1@20260917131115-1",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-create-bad-1",
+        "email": "abc-20260917131115-1@20260917131115-1",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "admin-create rejects invalid email 3",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "email": "@example.com-20260917131115-2",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-create-bad-2",
+        "email": "@example.com-20260917131115-2",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "admin-create rejects invalid email 4",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "email": "a@b-20260917131115-3",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-create-bad-3",
+        "email": "a@b-20260917131115-3",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "admin-create rejects invalid email 5",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "email": "a b@example.com-20260917131115-4",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-create-bad-4",
+        "email": "a b@example.com-20260917131115-4",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "admin-create rejects invalid email 6",
+      "category": "invalid",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "email": "a@@example.com-20260917131115-5",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-create-bad-5",
+        "email": "a@@example.com-20260917131115-5",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid registration",
+      "category": "valid",
+      "method": "POST",
+      "path": "/api/register",
+      "email": "User+Tag-20260917131115@Sub.Example.Invalid",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-valid",
+        "email": "User+Tag-20260917131115@Sub.Example.Invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid registration: login succeeds",
+      "category": "valid",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-register-valid",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 46,
+          "username": "FIX-EMAIL-20260917131115-register-valid",
+          "email": "user+tag-20260917131115@sub.example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid alias registration",
+      "category": "valid",
+      "method": "POST",
+      "path": "/register",
+      "email": "Alias-20260917131115@example.invalid",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-alias-valid",
+        "email": "Alias-20260917131115@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid alias registration: login succeeds",
+      "category": "valid",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-alias-valid",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 47,
+          "username": "FIX-EMAIL-20260917131115-alias-valid",
+          "email": "alias-20260917131115@example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid admin creation",
+      "category": "valid",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "email": "Admin-20260917131115@example.invalid",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-valid",
+        "email": "Admin-20260917131115@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 48,
+          "username": "FIX-EMAIL-20260917131115-admin-valid",
+          "email": "admin-20260917131115@example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid admin creation: login succeeds",
+      "category": "valid",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-valid",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 48,
+          "username": "FIX-EMAIL-20260917131115-admin-valid",
+          "email": "admin-20260917131115@example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Create legacy-update target",
+      "category": "valid",
+      "method": "POST",
+      "path": "/api/register",
+      "email": "Legacy-20260917131115@example.invalid",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-legacy-target",
+        "email": "Legacy-20260917131115@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true
+      },
+      "pass": true
+    },
+    {
+      "label": "Create legacy-update target: login succeeds",
+      "category": "valid",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-legacy-target",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 49,
+          "username": "FIX-EMAIL-20260917131115-legacy-target",
+          "email": "legacy-20260917131115@example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Legacy target login",
+      "category": "valid",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-legacy-target",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 49,
+          "username": "FIX-EMAIL-20260917131115-legacy-target",
+          "email": "legacy-20260917131115@example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Legacy update rejects invalid email 1",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/users/49",
+      "email": "invalid-email-20260917131115-legacy-0",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-legacy-target",
+        "email": "invalid-email-20260917131115-legacy-0",
+        "motto": "",
+        "major": ""
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Legacy update rejects invalid email 2",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/users/49",
+      "email": "abc-20260917131115-legacy-1@20260917131115-legacy-1",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-legacy-target",
+        "email": "abc-20260917131115-legacy-1@20260917131115-legacy-1",
+        "motto": "",
+        "major": ""
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Legacy update rejects invalid email 3",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/users/49",
+      "email": "@example.com-20260917131115-legacy-2",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-legacy-target",
+        "email": "@example.com-20260917131115-legacy-2",
+        "motto": "",
+        "major": ""
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Legacy update rejects invalid email 4",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/users/49",
+      "email": "a@b-20260917131115-legacy-3",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-legacy-target",
+        "email": "a@b-20260917131115-legacy-3",
+        "motto": "",
+        "major": ""
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Legacy update rejects invalid email 5",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/users/49",
+      "email": "a b@example.com-20260917131115-legacy-4",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-legacy-target",
+        "email": "a b@example.com-20260917131115-legacy-4",
+        "motto": "",
+        "major": ""
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Legacy update rejects invalid email 6",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/users/49",
+      "email": "a@@example.com-20260917131115-legacy-5",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-legacy-target",
+        "email": "a@@example.com-20260917131115-legacy-5",
+        "motto": "",
+        "major": ""
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Legacy update accepts valid email",
+      "category": "valid",
+      "method": "PUT",
+      "path": "/api/users/49",
+      "email": " Legacy+Tag-20260917131115@Sub.Example.Invalid ",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-legacy-target",
+        "email": " Legacy+Tag-20260917131115@Sub.Example.Invalid ",
+        "motto": "",
+        "major": ""
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 49,
+          "username": "FIX-EMAIL-20260917131115-legacy-target",
+          "email": "legacy+tag-20260917131115@sub.example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Create admin-edit target",
+      "category": "valid",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "email": "Edit-20260917131115@example.invalid",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+        "email": "Edit-20260917131115@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 50,
+          "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+          "email": "edit-20260917131115@example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Create admin-edit target: login succeeds",
+      "category": "valid",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 50,
+          "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+          "email": "edit-20260917131115@example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit rejects invalid email 1",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/admin/users/50",
+      "email": "invalid-email-20260917131115-admin-0",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+        "email": "invalid-email-20260917131115-admin-0",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit rejects invalid email 2",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/admin/users/50",
+      "email": "abc-20260917131115-admin-1@20260917131115-admin-1",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+        "email": "abc-20260917131115-admin-1@20260917131115-admin-1",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit rejects invalid email 3",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/admin/users/50",
+      "email": "@example.com-20260917131115-admin-2",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+        "email": "@example.com-20260917131115-admin-2",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit rejects invalid email 4",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/admin/users/50",
+      "email": "a@b-20260917131115-admin-3",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+        "email": "a@b-20260917131115-admin-3",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit rejects invalid email 5",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/admin/users/50",
+      "email": "a b@example.com-20260917131115-admin-4",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+        "email": "a b@example.com-20260917131115-admin-4",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit rejects invalid email 6",
+      "category": "invalid",
+      "method": "PUT",
+      "path": "/api/admin/users/50",
+      "email": "a@@example.com-20260917131115-admin-5",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+        "email": "a@@example.com-20260917131115-admin-5",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "邮箱格式不正确"
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit accepts valid email",
+      "category": "valid",
+      "method": "PUT",
+      "path": "/api/admin/users/50",
+      "email": " Admin+Tag-20260917131115@Sub.Example.Invalid ",
+      "body": {
+        "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+        "email": " Admin+Tag-20260917131115@Sub.Example.Invalid ",
+        "role": "user"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 50,
+          "username": "FIX-EMAIL-20260917131115-admin-edit-target",
+          "email": "admin+tag-20260917131115@sub.example.invalid",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup exact temporary user",
+      "category": "cleanup",
+      "method": "DELETE",
+      "path": "/api/admin/users/46",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup exact temporary user",
+      "category": "cleanup",
+      "method": "DELETE",
+      "path": "/api/admin/users/47",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup exact temporary user",
+      "category": "cleanup",
+      "method": "DELETE",
+      "path": "/api/admin/users/48",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup exact temporary user",
+      "category": "cleanup",
+      "method": "DELETE",
+      "path": "/api/admin/users/49",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup exact temporary user",
+      "category": "cleanup",
+      "method": "DELETE",
+      "path": "/api/admin/users/50",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    }
+  ],
+  "guardChecks": [
+    {
+      "entry": "register",
+      "email": "invalid-email",
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "admin-create",
+      "email": "invalid-email",
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "admin-edit",
+      "email": "invalid-email",
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "legacy-update",
+      "email": "invalid-email",
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    }
+  ],
+  "sqlChecks": [
+    {
+      "label": "register: empty email user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-empty"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register: invalid email user absent 1",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-bad-0"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register: invalid email user absent 2",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-bad-1"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register: invalid email user absent 3",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-bad-2"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register: invalid email user absent 4",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-bad-3"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register: invalid email user absent 5",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-bad-4"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register: invalid email user absent 6",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-bad-5"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register: rejected requests have no side effects",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 21,
+          "afterCount": 21,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "register-alias: empty email user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-alias-empty"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register-alias: invalid email user absent 1",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-alias-bad-0"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register-alias: invalid email user absent 2",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-alias-bad-1"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register-alias: invalid email user absent 3",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-alias-bad-2"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register-alias: invalid email user absent 4",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-alias-bad-3"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register-alias: invalid email user absent 5",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-alias-bad-4"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register-alias: invalid email user absent 6",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-register-alias-bad-5"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register-alias: rejected requests have no side effects",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 21,
+          "afterCount": 21,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "admin-create: empty email user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-admin-create-empty"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "admin-create: invalid email user absent 1",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-admin-create-bad-0"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "admin-create: invalid email user absent 2",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-admin-create-bad-1"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "admin-create: invalid email user absent 3",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-admin-create-bad-2"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "admin-create: invalid email user absent 4",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-admin-create-bad-3"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "admin-create: invalid email user absent 5",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-admin-create-bad-4"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "admin-create: invalid email user absent 6",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-EMAIL-20260917131115-admin-create-bad-5"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "admin-create: rejected requests have no side effects",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 21,
+          "afterCount": 21,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "Legacy update invalid 1: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        49
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Legacy update invalid 2: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        49
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Legacy update invalid 3: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        49
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Legacy update invalid 4: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        49
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Legacy update invalid 5: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        49
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Legacy update invalid 6: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        49
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Admin edit invalid 1: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        50
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Admin edit invalid 2: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        50
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Admin edit invalid 3: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        50
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Admin edit invalid 4: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        50
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Admin edit invalid 5: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        50
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Admin edit invalid 6: all fields unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        50
+      ],
+      "allFieldsUnchanged": true,
+      "emailUnchanged": true
+    },
+    {
+      "label": "Final FIX-EMAIL cleanup",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE LEFT(username, 10) = ?",
+      "params": [
+        "FIX-EMAIL-"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "Final baseline: every original row and field unchanged",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 21,
+          "afterCount": 21,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    }
+  ],
+  "temporaryUsers": [
+    {
+      "id": 46,
+      "username": "FIX-EMAIL-20260917131115-register-valid"
+    },
+    {
+      "id": 47,
+      "username": "FIX-EMAIL-20260917131115-alias-valid"
+    },
+    {
+      "id": 48,
+      "username": "FIX-EMAIL-20260917131115-admin-valid"
+    },
+    {
+      "id": 49,
+      "username": "FIX-EMAIL-20260917131115-legacy-target"
+    },
+    {
+      "id": 50,
+      "username": "FIX-EMAIL-20260917131115-admin-edit-target"
+    }
+  ],
+  "result": "PASS",
+  "cleanup": "PASS: FIX-EMAIL users = 0; all original rows and fields unchanged",
+  "finishedAt": "2026-09-17T13:11:16.294Z"
+}
