@@ -18,7 +18,7 @@
 
 | 项目 | 实际环境 |
 | --- | --- |
-| 项目路径 | `D:\my-study-system` |
+| 项目路径 | 项目根目录（`<project-root>`） |
 | 前端 | Vite 开发服务，`http://localhost:5173` |
 | 后端 | Express，`http://localhost:3001` |
 | 数据库 | MySQL，本地测试库 |

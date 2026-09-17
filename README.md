@@ -1,16 +1,199 @@
-# React + Vite
+# 学习协作系统｜软件测试作品集
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> 面向软件测试应届生岗位的项目作品集：以一个真实可运行的前后端学习协作系统为测试对象，完成需求梳理、用例设计、手工执行、接口与权限验证、SQL 数据核对、缺陷记录和证据归档。
 
-Currently, two official plugins are available:
+本仓库同时保留被测系统源码与测试成果。测试结论只来自当前代码和已经实际执行的场景；源码预测、需求待确认项与已确认缺陷分别记录，不把未执行内容计入结果。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 核心测试成果
 
-## React Compiler
+| 指标 | 数量 |
+| --- | ---: |
+| 累计执行 | **124** |
+| Pass | **77** |
+| Fail | **37** |
+| Risk | **10** |
+| 已确认缺陷 | **21** |
+| 业务规则缺口 | **1** |
+| 风险候选 | **9** |
+| 累计问题记录 | **31** |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+统计口径以管理员模块完成后的公开基线为准。Risk 表示实际观察到、但因需求规则未明确而暂不直接判定为缺陷的结果。
 
-## Expanding the ESLint configuration
+## 被测系统简介
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+学习协作系统采用 React、Node.js、Express、MySQL 和 Socket.IO 实现，主要包含：
+
+- 登录、注册与登录状态管理
+- 小组创建、邀请、成员关系和权限控制
+- 三状态任务看板与协作操作
+- 小组讨论、实时消息和 `@` 提及
+- 文件上传、下载、删除与资料共享
+- 通知、Dashboard、个人资料和密码修改
+- 管理员概览、用户管理、小组监督、任务监管和资料审查
+
+## 我的测试职责
+
+- 阅读前端页面、后端接口和数据库初始化代码，梳理真实功能与权限规则。
+- 设计正常、异常、边界、角色权限和数据一致性场景。
+- 通过页面、浏览器 DevTools、接口请求、SQL 查询和本地文件目录执行验证。
+- 保存最小完整证据链，区分 Pass、Fail、Risk 和仅源码预测内容。
+- 按根因归并缺陷，维护执行报告、缺陷报告和累计统计。
+- 在每轮测试结束后恢复临时账号、成员关系、任务、通知、文件和数据库记录。
+
+## 测试环境与工具
+
+| 类别 | 使用内容 |
+| --- | --- |
+| 前端 | React 19、Vite、React Router、Axios |
+| 后端 | Node.js、Express、Socket.IO、Multer |
+| 数据库 | MySQL、mysql2 |
+| 测试工具 | Chrome DevTools（Network、Console、Application）、SQL 查询工具、PowerShell |
+| 证据类型 | UI、HTTP 请求与响应、Console、SQL 查询、本地物理文件 |
+
+## 测试方法
+
+本项目以适合应届生展示的基础测试方法为主：
+
+- 正常流程、异常流程和必填项检查
+- 等价类、边界值和格式校验
+- 接口状态码、响应体和数据库结果核对
+- 组长、普通成员、非成员、管理员和未登录用户的权限验证
+- IDOR、跨组访问、宽松 ID 解析和静态资源直链等安全边界检查
+- 数据库记录、页面展示与磁盘文件的三方一致性检查
+- 页面刷新、状态持久化和 Socket.IO 实时消息验证
+
+本仓库目前不包含自动化测试框架、性能测试或渗透测试成果。
+
+## 测试覆盖矩阵
+
+| 模块 | 执行 | Pass | Fail | Risk | 主要覆盖 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 登录与注册 | 11 | 7 | 4 | 0 | 登录状态、重复数据、邮箱、密码边界 |
+| 小组基础管理 | 4 | 3 | 0 | 1 | 创建、必填、重复名称、访问保护 |
+| 小组邀请与成员权限 | 8 | 7 | 0 | 1 | 邀请、接受/拒绝、重复邀请、越权接口 |
+| 任务管理 | 21 | 10 | 11 | 0 | 状态流转、成员协作、跨组权限、输入与一致性 |
+| 讨论与实时消息 | 19 | 9 | 5 | 5 | 历史消息、实时通信、非成员访问、`@` 提及 |
+| 文件上传与资料共享 | 24 | 11 | 11 | 2 | 上传、下载、删除、静态直链、文件系统一致性 |
+| 通知 | 10 | 8 | 1 | 1 | 邀请状态、已读、删除、对象级权限和 ID 边界 |
+| Dashboard | 9 | 9 | 0 | 0 | 小组、任务、资料统计联动与权限隔离 |
+| 个人资料与密码 | 10 | 7 | 2 | 1 | 资料同步、越权、邮箱、改密和旧会话 |
+| 管理员 | 8 | 5 | 2 | 1 | 登录路由、统计、CRUD、权限隔离和关联清理 |
+| **累计** | **124** | **77** | **37** | **10** | — |
+
+## 代表性缺陷
+
+以下案例均已实际执行并记录为确认缺陷，不包含 Risk：
+
+| 缺陷 | 场景与实际结果 | 主要风险 | 详细记录 |
+| --- | --- | --- | --- |
+| `BUG-LR-002` 后端允许 1 位密码 | 绕过前端后，注册、个人改密和管理员新增用户接口均可设置密码 `1`，并能成功登录 | 弱口令账户安全 | [缺陷报告](docs/bug-report.md)、[个人资料与密码报告](docs/test-execution-profile.md) |
+| `BUG-LR-003` 非法邮箱可落库 | 注册、旧资料接口和管理员用户接口均可写入非法邮箱，SQL 已确认脏数据真实落库 | 数据质量、前后端校验不一致 | [缺陷报告](docs/bug-report.md)、[登录注册报告](docs/test-execution-login-register.md) |
+| `BUG-ADMIN-001` 管理员用户 ID 宽松解析 | `PUT /api/admin/users/29abc` 被解析为真实 ID 29，接口返回 200 并修改目标记录 | 错误资源命中、输入边界失效 | [缺陷报告](docs/bug-report.md)、[管理员报告](docs/test-execution-admin.md) |
+| `BUG-ADMIN-002` 强制解散后物理文件残留 | 解散小组后数据库关联记录已清零，但上传目录仍保留失去数据库索引的孤儿文件 | 数据库与文件系统不一致、磁盘占用 | [缺陷报告](docs/bug-report.md)、[管理员报告](docs/test-execution-admin.md) |
+
+## 精选测试证据
+
+| 弱密码可登录 | 非法邮箱真实落库 |
+| --- | --- |
+| ![1 位密码登录成功](docs/screenshots/PWD-005-one-char-password-login-success.png) | ![非法邮箱 SQL 校验](docs/screenshots/REGISTER-SQL-user-data-validation.png) |
+
+| 普通用户访问管理员接口被 403 拦截 | 数字前缀 ID 命中真实用户 |
+| --- | --- |
+| ![普通用户访问管理员接口 403](docs/screenshots/ADMIN-008-user-admin-stats-403.png) | ![宽松 ID 解析 SQL 证据](docs/screenshots/ADMIN-005-loose-id-parse-sql.png) |
+
+| 强制解散后物理文件仍残留 |
+| --- |
+| ![小组解散后孤儿物理文件](docs/screenshots/ADMIN-008-orphan-file-remains.png) |
+
+完整的 318 张正式证据按用例编号保存在 [`docs/screenshots/`](docs/screenshots/)，首页仅展示具有代表性的最小证据。
+
+## 核心文档导航
+
+- [完整测试文档索引](docs/README.md)
+- [系统测试分析与覆盖说明](docs/test-analysis.md)
+- [缺陷与风险报告](docs/bug-report.md)
+- [登录注册测试用例](docs/test-cases-login-register.md)
+- [登录注册执行报告](docs/test-execution-login-register.md)
+- [小组成员与权限执行报告](docs/test-execution-group-members.md)
+- [任务管理执行报告](docs/test-execution-tasks.md)
+- [讨论与实时消息执行报告](docs/test-execution-discussions.md)
+- [文件与资料共享执行报告](docs/test-execution-files.md)
+- [管理员模块执行报告](docs/test-execution-admin.md)
+
+## 项目运行方式
+
+### 1. 环境要求
+
+- Node.js 20.19+ 或 22.12+
+- MySQL 8.x
+- npm
+
+### 2. 安装依赖
+
+```bash
+npm install
+```
+
+### 3. 配置环境变量
+
+将 `.env.example` 复制为 `.env`，填写本机数据库连接信息，并为 `AUTH_TOKEN_SECRET` 设置随机长字符串。不要提交 `.env`。
+
+```dotenv
+DB_HOST=localhost
+DB_USER=<your-user>
+DB_PASSWORD=<your-password>
+DB_NAME=my_study_system
+AUTH_TOKEN_SECRET=<a-long-random-secret>
+```
+
+先在 MySQL 中创建与 `DB_NAME` 对应的空数据库。当前实际运行结构由后端启动时的 `createTables()` 自动创建和兼容升级。
+
+> 注意：`server/create-tables.sql` 是早期基础脚本，只包含部分旧表结构，表名、任务状态和字段与当前运行时结构并不完全一致，不能作为当前版本的完整初始化脚本。当前版本应以 `server/index.js` 中的运行时建表逻辑为准。
+
+### 4. 启动后端
+
+```bash
+node server/index.js
+```
+
+后端默认监听 `http://localhost:3001`。
+
+### 5. 启动前端
+
+在另一个终端运行：
+
+```bash
+npm run dev
+```
+
+前端开发地址通常为 `http://localhost:5173`。服务启动时可能创建本地演示账号，这些账号只用于本地展示，不应直接用于公网部署或生产环境。
+
+## 已知限制与风险
+
+- 21 个已确认缺陷尚未修复，本仓库重点展示测试发现、证据和分析过程。
+- `server/create-tables.sql` 不是当前完整数据库结构，运行时建表逻辑才是当前基线。
+- 文件上传、普通任务和讨论接口存在已经实测的权限与输入校验问题，详情见缺陷报告。
+- Dashboard 使用页面加载时快照，不通过轮询或 Socket 自动刷新。
+- 固定演示账号和初始化数据只适合本地环境；公网部署前应改为安全的初始化方式。
+- 当前成果以手工功能、接口、权限和数据一致性测试为主，未虚构自动化或性能测试经历。
+
+## 仓库结构
+
+```text
+.
+├─ src/                    前端页面、组件与 API 客户端
+├─ server/                 后端接口、运行时建表逻辑与上传服务
+├─ docs/                   测试分析、测试用例、执行报告和缺陷报告
+│  ├─ README.md            完整测试文档索引
+│  └─ screenshots/         按测试编号保存的正式证据
+├─ .env.example            环境变量示例
+├─ package.json            依赖与前端运行脚本
+└─ README.md               作品集首页
+```
+
+## 当前作品集状态
+
+- 业务代码基线与测试对象一致。
+- 主要业务模块和管理员模块均已有正式执行记录。
+- 测试数据已按各模块报告中的说明完成清理或恢复。
+- 当前公开基线为 124 条实际执行场景，等待最终核心流程回归确认后封版。

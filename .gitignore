@@ -20,6 +20,16 @@ dist-ssr
 # Local runtime data and backups
 server/uploads/
 backup-before-rebase-cleanup.patch
+backup*.sql
+dump*.sql
+*_dump.sql
+*.dump
+*.bak
+*.tmp
+*.db
+*.sqlite
+*.sqlite3
+backups/
 
 # Editor directories and files
 .vscode/*
