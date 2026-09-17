@@ -202,7 +202,7 @@
 | 验证批次 | `20260917124504`，真实后端 `http://localhost:3001` |
 | 修改文件 | `server/index.js`，增加共享长度校验及四个密码写入处理器的调用 |
 | 统一规则 | 设置新密码至少4位，沿用已有前端的JavaScript字符串 `.length` 语义；不增加复杂度或最大长度策略 |
-| 修复 commit | 待提交后补充；本轮未 commit、未 push |
+| 修复 commit | [`bbbccb9a4eb4b61eb9b052de7e946bdba805d672`](https://github.com/volcano-77/graduation-study-system/commit/bbbccb9a4eb4b61eb9b052de7e946bdba805d672) — `fix: enforce minimum password length` |
 
 **实际影响入口与原有规则：**
 
