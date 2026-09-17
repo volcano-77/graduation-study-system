@@ -1,0 +1,984 @@
+{
+  "bug": "BUG-ADMIN-001",
+  "runId": "20260917053942",
+  "startedAt": "2026-09-17T05:39:42.007Z",
+  "base": "http://localhost:3002",
+  "executionNote": "Temporary server copy changes only PORT from 3001 to 3002; original service is left running. Route callbacks are unchanged. Guard checks exclude authentication middleware, whose current-user SELECT is expected.",
+  "sourceSha256": "0be7848f279144c4e74058d935a56323e877dc9009d3564e963a61cd18eee38b",
+  "guardChecks": [
+    {
+      "method": "PUT",
+      "id": "29abc",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "PUT",
+      "id": "abc29",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "PUT",
+      "id": "29.5",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "PUT",
+      "id": "0",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "PUT",
+      "id": "-1",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "PUT",
+      "id": "029",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "PUT",
+      "id": "+29",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "PUT",
+      "id": "29 ",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "PUT",
+      "id": "29\n",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "PUT",
+      "id": "1e2",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "PUT",
+      "id": "0x1d",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "PUT",
+      "id": "9007199254740992",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "29abc",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "abc29",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "29.5",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "0",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "-1",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "029",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "+29",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "29 ",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "29\n",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "1e2",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "0x1d",
+      "status": 400,
+      "databaseCalls": 0
+    },
+    {
+      "method": "DELETE",
+      "id": "9007199254740992",
+      "status": 400,
+      "databaseCalls": 0
+    }
+  ],
+  "requests": [
+    {
+      "label": "Admin normal login",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "admin",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 3,
+          "username": "admin",
+          "role": "admin"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin user list loads",
+      "method": "GET",
+      "path": "/api/admin/users",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "users": {
+          "count": 20,
+          "ids": [
+            1,
+            2,
+            5,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            18,
+            19,
+            20,
+            21,
+            23,
+            25,
+            26
+          ]
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Create isolated temporary user",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 33,
+          "username": "FIX-ADMIN-ID-20260917053942",
+          "email": "fix-admin-id-20260917053942@example.invalid",
+          "role": "user",
+          "created_at": "2026-09-17T05:39:48.000Z",
+          "joined_group_count": 0
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/29abc",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/abc29",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/29.5",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/0",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/-1",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/029",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/%2B29",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/29%20",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/29%0A",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/1e2",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/0x1d",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/9007199254740992",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "PUT",
+      "path": "/api/admin/users/33abc",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-REJECTED",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/29abc",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/abc29",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/29.5",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/0",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/-1",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/029",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/%2B29",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/29%20",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/29%0A",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/1e2",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/0x1d",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/9007199254740992",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Reject invalid ID",
+      "method": "DELETE",
+      "path": "/api/admin/users/33abc",
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "无效的用户ID"
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid absent ID preserves 404",
+      "method": "PUT",
+      "path": "/api/admin/users/2147483647",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "response": {
+        "success": false,
+        "message": "用户不存在"
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid absent ID preserves 404",
+      "method": "DELETE",
+      "path": "/api/admin/users/2147483647",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "response": {
+        "success": false,
+        "message": "用户不存在"
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid numeric ID update",
+      "method": "PUT",
+      "path": "/api/admin/users/33",
+      "body": {
+        "username": "FIX-ADMIN-ID-20260917053942-EDIT",
+        "email": "fix-admin-id-20260917053942-edit@example.invalid",
+        "role": "user"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 33,
+          "username": "FIX-ADMIN-ID-20260917053942-EDIT",
+          "email": "fix-admin-id-20260917053942-edit@example.invalid",
+          "role": "user",
+          "created_at": "2026-09-17T05:39:48.000Z",
+          "joined_group_count": 0
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Updated user visible in list",
+      "method": "GET",
+      "path": "/api/admin/users",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "users": {
+          "count": 21,
+          "ids": [
+            1,
+            2,
+            5,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            18,
+            19,
+            20,
+            21,
+            23,
+            25,
+            26,
+            33
+          ]
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid numeric ID delete and cleanup",
+      "method": "DELETE",
+      "path": "/api/admin/users/33",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "User list loads after cleanup",
+      "method": "GET",
+      "path": "/api/admin/users",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "users": {
+          "count": 20,
+          "ids": [
+            1,
+            2,
+            5,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            18,
+            19,
+            20,
+            21,
+            23,
+            25,
+            26
+          ]
+        }
+      },
+      "pass": true
+    }
+  ],
+  "sqlChecks": [
+    {
+      "label": "Server startup: baseline unchanged",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 21,
+          "afterCount": 21,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "Invalid PUT/DELETE: every table unchanged",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 22,
+          "afterCount": 22,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "Original ID 29 and live temporary target",
+      "query": "SELECT * FROM users ORDER BY id",
+      "comparisonNote": "Read from the before/after full-table snapshots; the following IDs are filtered in Node, not SQL bind parameters.",
+      "comparisonFilterIds": [
+        29,
+        33
+      ],
+      "id29BeforeCount": 0,
+      "id29AfterCount": 0,
+      "temporaryUserBefore": {
+        "id": 33,
+        "username": "FIX-ADMIN-ID-20260917053942",
+        "email": "fix-admin-id-20260917053942@example.invalid",
+        "role": "user"
+      },
+      "temporaryUserUnchanged": true
+    },
+    {
+      "label": "Prove valid ID absent before requests",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE id = ?",
+      "params": [
+        2147483647
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "Valid update persisted",
+      "query": "SELECT id, username, email, role FROM users WHERE id = ?",
+      "params": [
+        33
+      ],
+      "rows": [
+        {
+          "id": 33,
+          "username": "FIX-ADMIN-ID-20260917053942-EDIT",
+          "email": "fix-admin-id-20260917053942-edit@example.invalid",
+          "role": "user"
+        }
+      ]
+    },
+    {
+      "label": "Temporary data cleanup",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE id = ? OR username IN (?, ?, ?)",
+      "params": [
+        33,
+        "FIX-ADMIN-ID-20260917053942",
+        "FIX-ADMIN-ID-20260917053942-EDIT",
+        "FIX-ADMIN-ID-20260917053942-REJECTED"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "Final baseline: all original rows and fields unchanged",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 21,
+          "afterCount": 21,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    }
+  ],
+  "temporaryUser": {
+    "id": 33,
+    "username": "FIX-ADMIN-ID-20260917053942"
+  },
+  "cleanup": "PASS: temporary record count = 0; deleted through normal numeric-ID API",
+  "result": "PASS",
+  "finishedAt": "2026-09-17T05:39:49.075Z"
+}

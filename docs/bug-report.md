@@ -1043,6 +1043,51 @@ Content-Type: application/json
 
 ![BUG-ADMIN-001：真实用户记录被修改](./screenshots/ADMIN-005-loose-id-parse-sql.png)
 
+### 修复与定向回归追加记录（2026-09-17）
+
+> 上面的“待修复”、缺陷描述、实际结果和截图是发现阶段的原始记录，完整保留。以下为后续修复记录，不改变该缺陷曾实际发生的事实。
+
+| 项目 | 内容 |
+| --- | --- |
+| 当前修复状态 | **已修复并验证** |
+| 修复日期 | 2026-09-17（UTC+8） |
+| 验证批次 | `20260917053942`，13:39:42～13:39:49 |
+| 修改文件 | `server/index.js`，管理员用户 PUT / DELETE 两处 ID 校验 |
+| 修复 commit | 待提交后补充；本轮未 commit、未 push |
+
+**根因与修复方式：** PUT 和 DELETE 都使用 `Number.parseInt(req.params.id, 10)`，数字前缀会被截取成真实 ID。项目没有可复用的严格 ID helper；本次仅将这两处改为 `Number(req.params.id)`，并同时要求原始参数匹配 `/^[1-9]\d*$/`、转换结果满足 `Number.isSafeInteger()`。非法参数在目标用户查询、更新或删除前返回 HTTP 400、`success:false`、`message:"无效的用户ID"`。鉴权中间件正常读取当前登录管理员不属于目标用户业务查询。没有 GET `/api/admin/users/:id` 接口；现有 GET 为用户列表，不需要添加 ID 校验。
+
+**修复后预期：** 非法 ID 统一拒绝；合法但不存在的 ID 保持 404“用户不存在”；合法真实 ID 的更新、删除和列表读取保持正常。
+
+**验证环境与方式：** 先使用用户提供的当前管理员测试凭据调用原服务 `POST /api/login`，返回 200，admin id=3、role=admin。随后从修复后的源码启动临时服务 `http://localhost:3002`，仅将运行副本中的端口由 3001 改为 3002；路由、鉴权和业务代码不变，连接同一本地 MySQL。原 3001 服务未重启，仍为旧运行实例；日后要在 3001 使用修复版，需要正常重启后端。本次回归为真实 HTTP/API 与 SQL 层验证，不宣称完成前端页面回归或全项目回归。
+
+| 定向验证 / 回归项 | 实际结果 | 结论 |
+| --- | --- | --- |
+| 管理员正常登录 | 修复版 `POST /api/login` 返回 200、`success:true`、role=admin | Pass |
+| 管理员用户列表 | 新增前、修改后、清理后共3次 GET，均为200；修改后的值在列表中可读，清理后20个普通用户 | Pass |
+| `29abc` 非法 PUT / DELETE | 均返回400、`success:false`、“无效的用户ID” | Pass |
+| 其他非法 ID | `abc29`、`29.5`、`0`、`-1`、`029`、`+29`、尾随空格、尾随换行、`1e2`、`0x1d`、`9007199254740992`，PUT / DELETE 均返回400 | Pass |
+| 现存真实目标的数字前缀 | 临时用户真实id=33，`33abc` 的 PUT / DELETE 均返回400；记录仍存在且全部字段未变 | Pass |
+| 合法但不存在 ID | SQL先确认 `2147483647` 的count=0；PUT / DELETE 均返回404“用户不存在”，没有错误返回400 | Pass |
+| 合法真实 ID CRUD | 新增临时普通用户返回201；`PUT /api/admin/users/33` 返回200，SQL确认用户名、邮箱修改成功；正常 DELETE 返回200 | Pass |
+| 无副作用与数据清理 | 非法请求前后8张表全字段一致；清理后原有记录与初始基线全字段一致；临时记录count=0 | Pass |
+
+修复版共执行35次真实HTTP请求，其中26次非法ID请求（13种值 × PUT/DELETE）；另有24次直接执行原路由回调的数据库访问断言，全部返回400且目标业务数据库调用数为0。PUT使用完整有效的用户名、邮箱、角色请求体，排除必填项错误导致的假通过。以上属于本缺陷的修复验证，不计入此前124条正式功能测试的历史统计。
+
+**数据库与清理：** 本轮开始时历史id=29已不存在，非法请求前后均为0条；因此另用本轮创建的 `FIX-ADMIN-ID-20260917053942`（id=33）验证现存资源不会被数字前缀误命中。只有该临时用户执行正常修改和删除。通过只读SQL快照对比 users、groups_table、group_members、tasks、discussions、notifications、shared_files、group_files 的全部记录与字段，正式账号及关联数据均未改变。最终以精确id和精确临时用户名查询，残留count=0；没有直接执行SQL清理语句，没有重置数据库或修改管理员密码。自增序列正常递增，不回拨。临时后端进程及运行副本已清理。
+
+**回归边界：** 仅覆盖管理员登录、用户列表、用户正常CRUD、不存在语义及非法ID拒绝。未执行REG-001～REG-014或全部124条回归。其他用户、小组、任务、文件、通知接口仍可见同类宽松解析代码，本轮只做源码定位，未扩修、未新增其缺陷结论；BUG-LR-002、BUG-LR-003、BUG-ADMIN-002均未处理。
+
+**修复后证据：** 以下四张截图为真实HTTP/SQL执行日志的可视化页面截图，明确区别于DevTools或数据库客户端原生截图。完整脱敏请求、响应、SQL检查及受测源码SHA-256见 [FIX-ADMIN-001-results.json](./screenshots/FIX-ADMIN-001-results.json)。不保存密码、完整token或原始数据库私密字段。原有两张 `ADMIN-005-loose-id-parse-*` 截图未删除、未覆盖，修复前后SHA-256一致。
+
+![BUG-ADMIN-001修复后：非法ID统一返回400](./screenshots/FIX-ADMIN-001-invalid-id-400.png)
+
+![BUG-ADMIN-001修复后：合法ID及小范围回归通过](./screenshots/FIX-ADMIN-001-valid-id-regression.png)
+
+![BUG-ADMIN-001修复后：数据库无副作用](./screenshots/FIX-ADMIN-001-no-side-effect-sql.png)
+
+![BUG-ADMIN-001修复后：临时数据清理为0](./screenshots/FIX-ADMIN-001-cleanup-sql.png)
+
 ## BUG-ADMIN-002：管理员强制解散小组后残留物理上传文件
 
 ### 基本信息
@@ -1386,3 +1431,5 @@ Content-Type: application/json
 | **问题记录合计** | **31** |
 
 21个已确认缺陷中，高严重程度8个、中严重程度13个。另有10个没有明确需求依据的问题：BUG-GR-001为小组名称规则缺口；RISK-PROF-001、RISK-GM-001、RISK-FILE-001、RISK-FILE-002、3个RISK-DISC-MENTION记录、RISK-NOTIF-001和RISK-ADMIN-001均属于需求待确认 / 风险候选。ADMIN-005的弱密码与非法邮箱分别扩展BUG-LR-002、BUG-LR-003，不重复计数；管理员用户ID宽松解析新增BUG-ADMIN-001，强制解散后残留物理文件新增BUG-ADMIN-002。本轮因此新增确认缺陷2个、风险候选1个。所有问题均未修改代码；当前也没有执行修复后的回归测试。
+
+> 2026-09-17修复阶段追加说明：上段为发现阶段的历史汇总，原文保留。BUG-ADMIN-001现已修复并完成定向验证，详见该条目的追加记录；累计发现缺陷仍为21个、累计问题记录仍为31个。本次不调整README或历史测试执行统计。

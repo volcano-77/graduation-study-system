@@ -624,13 +624,13 @@ app.post('/api/admin/users', requireAuthUser, requireAdmin, async (req, res) => 
 
 // 管理员：更新用户信息
 app.put('/api/admin/users/:id', requireAuthUser, requireAdmin, async (req, res) => {
-    const targetUserId = Number.parseInt(req.params.id, 10);
+    const targetUserId = Number(req.params.id);
     const username = typeof req.body?.username === 'string' ? req.body.username.trim() : '';
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
     const password = typeof req.body?.password === 'string' ? req.body.password : '';
     const role = req.body?.role === 'admin' ? 'admin' : 'user';
 
-    if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+    if (!/^[1-9]\d*$/.test(req.params.id) || !Number.isSafeInteger(targetUserId)) {
         return res.status(400).json({ success: false, message: '无效的用户ID' });
     }
     if (!username || !email) {
@@ -1174,8 +1174,8 @@ app.delete('/api/admin/files/:fileId', requireAuthUser, requireAdmin, async (req
 
 // 管理员：删除违规用户（可强制清理其所属小组数据）
 app.delete('/api/admin/users/:id', requireAuthUser, requireAdmin, async (req, res) => {
-    const targetUserId = Number.parseInt(req.params.id, 10);
-    if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+    const targetUserId = Number(req.params.id);
+    if (!/^[1-9]\d*$/.test(req.params.id) || !Number.isSafeInteger(targetUserId)) {
         return res.status(400).json({ success: false, message: '无效的用户ID' });
     }
 
