@@ -1282,6 +1282,11 @@ app.delete('/api/admin/groups/:id', requireAuthUser, requireAdmin, async (req, r
             return res.status(404).json({ success: false, message: '小组不存在' });
         }
 
+        const [fileRows] = await connection.execute(
+            'SELECT file_url FROM group_files WHERE group_id = ?',
+            [groupId]
+        );
+
         await connection.execute('DELETE FROM notifications WHERE group_id = ?', [groupId]);
         await connection.execute('DELETE FROM group_members WHERE group_id = ?', [groupId]);
         await connection.execute('DELETE FROM discussions WHERE group_id = ?', [groupId]);
@@ -1292,6 +1297,23 @@ app.delete('/api/admin/groups/:id', requireAuthUser, requireAdmin, async (req, r
         await connection.commit();
         if (result.affectedRows === 0) {
             return res.status(404).json({ success: false, message: '小组不存在' });
+        }
+
+        for (const file of fileRows) {
+            const fileUrl = typeof file.file_url === 'string' ? file.file_url : '';
+            const fileName = path.basename(fileUrl);
+            if (!fileName) {
+                continue;
+            }
+
+            const absoluteFilePath = path.join(uploadsDirectory, fileName);
+            try {
+                fs.unlinkSync(absoluteFilePath);
+            } catch (unlinkError) {
+                if (unlinkError.code !== 'ENOENT') {
+                    console.warn('管理员解散小组时删除物理文件失败（数据库已提交）:', unlinkError.message);
+                }
+            }
         }
 
         return res.json({ success: true, message: '小组已强制解散' });

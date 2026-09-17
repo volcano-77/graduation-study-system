@@ -1237,6 +1237,54 @@ Content-Type: application/json
 
 ![BUG-ADMIN-002：物理文件仍然残留](./screenshots/ADMIN-008-orphan-file-remains.png)
 
+### 修复与定向回归追加记录（2026-09-17，BUG-ADMIN-002）
+
+> 上面的“待修复”、原始缺陷描述、实际结果及3张修复前截图为发现阶段记录，完整保留。以下追加当前代码复现、修复和回归过程，不否认管理员强制解散曾产生孤儿物理文件的历史。
+
+| 项目 | 内容 |
+| --- | --- |
+| 当前修复状态 | **已修复并验证** |
+| 修复日期 | 2026-09-17（UTC+8） |
+| 修复前复现批次 | `20260917132931`，真实后端 `http://localhost:3001` |
+| 修复后验证批次 | `20260917133226`，真实后端 `http://localhost:3001` |
+| 修改文件 | `server/index.js`，仅修改管理员强制解散小组处理器 |
+| 修复 commit | 待正式提交后回填 |
+
+**根因与修复前流程：** `DELETE /api/admin/groups/:id` 原来只读取目标小组id，在数据库事务中显式删除notifications、group_members、discussions、tasks、shared_files后删除groups_table；group_files依靠 `ON DELETE CASCADE` 自动清理。处理器从未在级联发生前读取 `group_files.file_url`，也没有调用文件系统删除，事务提交后数据库已失去物理文件路径。现有管理员单文件销毁和普通单文件删除接口则会先按精确记录读取file_url，再以basename定位uploads内文件并调用 `fs.unlinkSync`。
+
+**当前缺陷复现：** 使用 `FIX-GROUP-20260917132931-REPRO` 和两份 `FIX-FILE-*` TXT 调用真实创建、上传及管理员强制解散接口。解散返回200，目标小组七类数据库记录均为0，但数据库返回的两个精确物理路径仍存在，确认当前代码仍可复现。随后只删除这两个已捕获路径，数据库和uploads基线恢复。完整脱敏记录见 [REPRO-ADMIN-002-results.json](./screenshots/REPRO-ADMIN-002-results.json)。
+
+**最小修复与文件清理策略：** 在管理员事务确认小组存在后，增加 `SELECT file_url FROM group_files WHERE group_id = ?`，只保存数据库明确属于目标小组的路径；原有数据库删除和级联逻辑不变。事务成功提交后，逐条对保存的file_url取basename，与固定 `server/uploads` 目录拼接并调用 `fs.unlinkSync`。没有扫描uploads、没有文件名前缀或contains匹配、没有目录级删除。`ENOENT` 表示目标文件已经不存在，直接继续；其他文件系统错误记录警告，避免把已经提交成功的数据库删除误报为可回滚失败。
+
+**数据库与文件系统顺序及权衡：** 本次采用“事务内读取精确路径 → 完成并提交数据库删除 → 逐个删除物理文件”。数据库事务和文件系统不能天然原子化。该顺序避免出现“先删文件、随后数据库回滚，留下仍有效但无法访问的文件记录”；代价是数据库提交后若遇到权限或磁盘等非ENOENT错误，数据库不能回滚，日志会保留失败信息，仍需运维处理残留文件。本轮正常路径、缺失文件容错和保护边界均已通过。
+
+| 定向验证 / 小范围回归 | 真实结果 |
+| --- | --- |
+| admin登录、管理员小组列表 | 均返回200，正常加载 |
+| 有文件小组强制解散 | 2份TXT、成员、任务、讨论、通知、共享资料均已准备；DELETE返回200 |
+| 数据库关联清理 | groups_table、group_members、tasks、discussions、notifications、shared_files、group_files均为0 |
+| 物理文件清理 | 目标组2份文件均不存在 |
+| 其他小组保护 | 保护组group_files记录仍为1，物理文件仍存在 |
+| 缺失物理文件容错 | 手工精确删除一份临时文件并保留DB记录后，强制解散仍返回200；同组另一份文件也被删除，数据库归零 |
+| 无文件小组 | 强制解散返回200，无文件清理异常 |
+| 单文件删除接口 | `DELETE /api/groups/:groupId/files/:fileId` 返回200，数据库记录和物理文件均删除 |
+
+本批执行16次真实HTTP请求，全部符合预期；其中4个管理员强制解散请求分别覆盖有文件、物理文件缺失、无文件及保护组最终清理。测试数据使用4个 `FIX-GROUP-20260917133226-*` 小组和5份 `FIX-FILE-*` TXT；没有操作group31或历史正式测试文件。完整脱敏结果、相对文件路径及受测源码SHA-256见 [FIX-ADMIN-002-results.json](./screenshots/FIX-ADMIN-002-results.json)，不包含密码、JWT或敏感绝对路径。
+
+**数据库副作用与最终清理：** 验证结束时 `FIX-GROUP-` 临时小组为0，全部捕获的 `FIX-FILE-` 精确路径均不存在。users、groups_table、group_members、tasks、discussions、notifications、shared_files、group_files与执行前基线逐行全字段一致，server/uploads原有文件名集合不变，qa_user01、demo_user、qa_nonmember01、admin等正式账号字段无变化。
+
+**范围边界：** 源码只读检查发现普通组长删除小组以及管理员删除用户时连带删除其自有小组，也没有清理对应物理文件，存在同类静态风险。本轮遵循单缺陷范围，只修复并实测 `DELETE /api/admin/groups/:id`，未扩修或对上述两条破坏性路径做真实复现。没有执行REG-001～REG-014或重复124条正式功能测试，README累计统计未修改。
+
+![BUG-ADMIN-002修复后：管理员强制解散及无文件/缺失文件回归](./screenshots/FIX-ADMIN-002-group-delete-200.png)
+
+![BUG-ADMIN-002修复后：数据库关联记录全部清理](./screenshots/FIX-ADMIN-002-db-clean.png)
+
+![BUG-ADMIN-002修复后：目标物理文件删除及ENOENT容错](./screenshots/FIX-ADMIN-002-files-removed.png)
+
+![BUG-ADMIN-002修复后：其他小组文件受保护及单文件删除回归](./screenshots/FIX-ADMIN-002-other-group-protected.png)
+
+![BUG-ADMIN-002修复后：临时数据与文件清理完成](./screenshots/FIX-ADMIN-002-cleanup.png)
+
 ## 2. 需求待确认 / 权限与隐私风险候选
 
 ### RISK-ADMIN-001：第二管理员的列表、登录权限与重启后角色不一致
@@ -1540,3 +1588,5 @@ Content-Type: application/json
 > 2026-09-17后续追加：BUG-LR-002已修复并完成上述HTTP/SQL定向回归，原始缺陷历史完整保留；README及累计发现21个确认缺陷的统计未修改。
 
 > 2026-09-17后续追加：BUG-LR-003已修复并完成上述复现、HTTP/SQL定向回归和数据清理，原始缺陷历史完整保留；README及累计发现21个确认缺陷的统计未修改。
+
+> 2026-09-17后续追加：BUG-ADMIN-002已修复并完成物理文件、数据库及HTTP定向回归，原始缺陷历史完整保留；README及累计发现21个确认缺陷的统计未修改。

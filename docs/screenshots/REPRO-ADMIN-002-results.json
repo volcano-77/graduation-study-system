@@ -1,0 +1,134 @@
+{
+  "bug": "BUG-ADMIN-002",
+  "phase": "before-fix-reproduction",
+  "runId": "20260917132931",
+  "base": "http://localhost:3001",
+  "requests": [
+    {
+      "label": "Admin login",
+      "method": "POST",
+      "path": "/api/login",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 3,
+          "username": "admin",
+          "email": "admin@example.com",
+          "avatar": null,
+          "motto": null,
+          "major": null,
+          "role": "admin",
+          "created_at": "2026-03-07T14:30:56.000Z"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Create reproduction group",
+      "method": "POST",
+      "path": "/api/groups",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "group": {
+          "id": 34,
+          "name": "FIX-GROUP-20260917132931-REPRO",
+          "description": "BUG-ADMIN-002 pre-fix reproduction",
+          "owner_id": 21,
+          "created_at": "2026-09-17T13:29:32.000Z"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Upload reproduction file 1",
+      "method": "POST",
+      "path": "/api/groups/34/files",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "file": {
+          "id": 25,
+          "group_id": 34,
+          "uploader_id": 21,
+          "file_name": "FIX-FILE-20260917132931-REPRO-1.txt",
+          "file_url": "/uploads/1789651772097-FIX-FILE-20260917132931-REPRO-1.txt",
+          "file_size": 29
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Upload reproduction file 2",
+      "method": "POST",
+      "path": "/api/groups/34/files",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "file": {
+          "id": 26,
+          "group_id": 34,
+          "uploader_id": 21,
+          "file_name": "FIX-FILE-20260917132931-REPRO-2.txt",
+          "file_url": "/uploads/1789651772108-FIX-FILE-20260917132931-REPRO-2.txt",
+          "file_size": 29
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin force delete group before fix",
+      "method": "DELETE",
+      "path": "/api/admin/groups/34",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "小组已强制解散"
+      },
+      "pass": true
+    }
+  ],
+  "sqlChecks": [
+    {
+      "label": "All target group rows removed",
+      "groupId": 34,
+      "counts": {
+        "groups_table": 0,
+        "group_members": 0,
+        "tasks": 0,
+        "discussions": 0,
+        "notifications": 0,
+        "shared_files": 0,
+        "group_files": 0
+      }
+    }
+  ],
+  "files": [
+    {
+      "fileId": 25,
+      "groupId": 34,
+      "originalName": "FIX-FILE-20260917132931-REPRO-1.txt",
+      "storedPath": "server/uploads/1789651772097-FIX-FILE-20260917132931-REPRO-1.txt",
+      "existedBeforeDelete": true,
+      "remainedAfterGroupDelete": true
+    },
+    {
+      "fileId": 26,
+      "groupId": 34,
+      "originalName": "FIX-FILE-20260917132931-REPRO-2.txt",
+      "storedPath": "server/uploads/1789651772108-FIX-FILE-20260917132931-REPRO-2.txt",
+      "existedBeforeDelete": true,
+      "remainedAfterGroupDelete": true
+    }
+  ],
+  "cleanup": "PASS: exact captured files removed; FIX-GROUP rows = 0; database and uploads baselines restored",
+  "reproduction": "PASS: database rows removed but both exact physical files remained",
+  "finishedAt": "2026-09-17T13:29:32.153Z"
+}

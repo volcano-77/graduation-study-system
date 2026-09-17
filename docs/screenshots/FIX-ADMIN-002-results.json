@@ -1,0 +1,319 @@
+{
+  "bug": "BUG-ADMIN-002",
+  "phase": "after-fix-verification",
+  "runId": "20260917133226",
+  "base": "http://localhost:3001",
+  "sourceSha256": "3906ca008a291e256e9a3d9c72799cd8921b2cd9ad58d585ef8aa3b9b3e0ce80",
+  "strategy": "select exact group_files.file_url rows in the DB transaction; commit DB deletion; unlink each captured uploads basename; ignore ENOENT",
+  "requests": [
+    {
+      "label": "Admin login",
+      "method": "POST",
+      "path": "/api/login",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "pass": true
+    },
+    {
+      "label": "Admin group list",
+      "method": "GET",
+      "path": "/api/admin/groups",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "pass": true
+    },
+    {
+      "label": "Create WITH-FILES group",
+      "method": "POST",
+      "path": "/api/groups",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "pass": true
+    },
+    {
+      "label": "Upload TARGET-1",
+      "method": "POST",
+      "path": "/api/groups/:id/files",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "pass": true
+    },
+    {
+      "label": "Upload TARGET-2",
+      "method": "POST",
+      "path": "/api/groups/:id/files",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "pass": true
+    },
+    {
+      "label": "Create PROTECT group",
+      "method": "POST",
+      "path": "/api/groups",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "pass": true
+    },
+    {
+      "label": "Upload PROTECT",
+      "method": "POST",
+      "path": "/api/groups/:id/files",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "pass": true
+    },
+    {
+      "label": "Create MISSING-FILE group",
+      "method": "POST",
+      "path": "/api/groups",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "pass": true
+    },
+    {
+      "label": "Upload MISSING-BEFORE-DELETE",
+      "method": "POST",
+      "path": "/api/groups/:id/files",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "pass": true
+    },
+    {
+      "label": "Upload MISSING-COMPANION",
+      "method": "POST",
+      "path": "/api/groups/:id/files",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "pass": true
+    },
+    {
+      "label": "Create EMPTY group",
+      "method": "POST",
+      "path": "/api/groups",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "pass": true
+    },
+    {
+      "label": "Admin force delete group with files",
+      "method": "DELETE",
+      "path": "/api/admin/groups/:id",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "message": "小组已强制解散",
+      "pass": true
+    },
+    {
+      "label": "Admin force delete group with one missing physical file",
+      "method": "DELETE",
+      "path": "/api/admin/groups/:id",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "message": "小组已强制解散",
+      "pass": true
+    },
+    {
+      "label": "Admin force delete empty group",
+      "method": "DELETE",
+      "path": "/api/admin/groups/:id",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "message": "小组已强制解散",
+      "pass": true
+    },
+    {
+      "label": "Single-file delete regression",
+      "method": "DELETE",
+      "path": "/api/groups/:id/files/:id",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "message": "文件删除成功",
+      "pass": true
+    },
+    {
+      "label": "Admin delete protection group after single-file regression",
+      "method": "DELETE",
+      "path": "/api/admin/groups/:id",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "success": true,
+      "message": "小组已强制解散",
+      "pass": true
+    }
+  ],
+  "sqlChecks": [
+    {
+      "label": "Target group setup contains every related row type",
+      "groupPurpose": "WITH-FILES",
+      "counts": {
+        "groups_table": 1,
+        "group_members": 1,
+        "tasks": 1,
+        "discussions": 1,
+        "notifications": 1,
+        "shared_files": 1,
+        "group_files": 2
+      }
+    },
+    {
+      "label": "Target group and all related rows removed",
+      "groupPurpose": "WITH-FILES",
+      "counts": {
+        "groups_table": 0,
+        "group_members": 0,
+        "tasks": 0,
+        "discussions": 0,
+        "notifications": 0,
+        "shared_files": 0,
+        "group_files": 0
+      }
+    },
+    {
+      "label": "Other group protection record remains",
+      "groupPurpose": "PROTECT",
+      "groupFileCount": 1
+    },
+    {
+      "label": "Missing-file group DB cleanup completed",
+      "groupPurpose": "MISSING-FILE",
+      "counts": {
+        "groups_table": 0,
+        "group_members": 0,
+        "tasks": 0,
+        "discussions": 0,
+        "notifications": 0,
+        "shared_files": 0,
+        "group_files": 0
+      }
+    },
+    {
+      "label": "Empty group cleanup completed",
+      "groupPurpose": "EMPTY",
+      "counts": {
+        "groups_table": 0,
+        "group_members": 0,
+        "tasks": 0,
+        "discussions": 0,
+        "notifications": 0,
+        "shared_files": 0,
+        "group_files": 0
+      }
+    },
+    {
+      "label": "Single-file endpoint removed DB record",
+      "count": 0
+    },
+    {
+      "label": "All eight database tables restored to exact baseline",
+      "tables": [
+        "users",
+        "groups_table",
+        "group_members",
+        "tasks",
+        "discussions",
+        "notifications",
+        "shared_files",
+        "group_files"
+      ],
+      "allRowsAndFieldsUnchanged": true
+    }
+  ],
+  "fileChecks": [
+    {
+      "label": "Target physical file 1 removed",
+      "storedPath": "server/uploads/1789651946415-FIX-FILE-20260917133226-TARGET-1.txt",
+      "expectedExists": false,
+      "actualExists": false,
+      "pass": true
+    },
+    {
+      "label": "Target physical file 2 removed",
+      "storedPath": "server/uploads/1789651946425-FIX-FILE-20260917133226-TARGET-2.txt",
+      "expectedExists": false,
+      "actualExists": false,
+      "pass": true
+    },
+    {
+      "label": "Other group protection file remains",
+      "storedPath": "server/uploads/1789651946470-FIX-FILE-20260917133226-PROTECT.txt",
+      "expectedExists": true,
+      "actualExists": true,
+      "pass": true
+    },
+    {
+      "label": "Controlled missing file removed before group deletion",
+      "storedPath": "server/uploads/1789651946490-FIX-FILE-20260917133226-MISSING-BEFORE-DELETE.txt",
+      "expectedExists": false,
+      "actualExists": false,
+      "pass": true
+    },
+    {
+      "label": "Already missing file remains absent without failure",
+      "storedPath": "server/uploads/1789651946490-FIX-FILE-20260917133226-MISSING-BEFORE-DELETE.txt",
+      "expectedExists": false,
+      "actualExists": false,
+      "pass": true
+    },
+    {
+      "label": "Companion physical file still removed",
+      "storedPath": "server/uploads/1789651946497-FIX-FILE-20260917133226-MISSING-COMPANION.txt",
+      "expectedExists": false,
+      "actualExists": false,
+      "pass": true
+    },
+    {
+      "label": "Protection file still exists before single-file regression",
+      "storedPath": "server/uploads/1789651946470-FIX-FILE-20260917133226-PROTECT.txt",
+      "expectedExists": true,
+      "actualExists": true,
+      "pass": true
+    },
+    {
+      "label": "Single-file endpoint removed physical file",
+      "storedPath": "server/uploads/1789651946470-FIX-FILE-20260917133226-PROTECT.txt",
+      "expectedExists": false,
+      "actualExists": false,
+      "pass": true
+    }
+  ],
+  "groups": [
+    {
+      "purpose": "WITH-FILES",
+      "id": 35,
+      "name": "FIX-GROUP-20260917133226-WITH-FILES"
+    },
+    {
+      "purpose": "PROTECT",
+      "id": 36,
+      "name": "FIX-GROUP-20260917133226-PROTECT"
+    },
+    {
+      "purpose": "MISSING-FILE",
+      "id": 37,
+      "name": "FIX-GROUP-20260917133226-MISSING-FILE"
+    },
+    {
+      "purpose": "EMPTY",
+      "id": 38,
+      "name": "FIX-GROUP-20260917133226-EMPTY"
+    }
+  ],
+  "result": "PASS",
+  "cleanup": "PASS: FIX-GROUP rows = 0; all exact FIX-FILE paths absent; database and uploads baselines restored",
+  "finishedAt": "2026-09-17T13:32:26.576Z"
+}
