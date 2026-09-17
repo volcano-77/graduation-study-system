@@ -21,6 +21,7 @@ const PORT = 3001;
 const TASK_STATUS_OPTIONS = ['待处理', '进行中', '已完成'];
 const DEFAULT_TASK_STATUS = '待处理';
 const BCRYPT_SALT_ROUNDS = 10;
+const MIN_PASSWORD_LENGTH = 4;
 const BCRYPT_HASH_PATTERN = /^\$2[aby]\$\d{2}\$/;
 const AUTH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET || crypto.randomBytes(32).toString('hex');
@@ -166,6 +167,10 @@ function requireAdmin(req, res, next) {
         return res.status(403).json({ success: false, message: '仅管理员可执行该操作' });
     }
     return next();
+}
+
+function isValidPasswordLength(password) {
+    return password.length >= MIN_PASSWORD_LENGTH;
 }
 
 async function ensureColumnExists(tableName, columnName, columnDefinition) {
@@ -485,6 +490,9 @@ async function handleRegister(req, res) {
             message: '昵称、邮箱和密码不能为空'
         });
     }
+    if (!isValidPasswordLength(normalizedPassword)) {
+        return res.status(400).json({ success: false, message: `密码至少需要 ${MIN_PASSWORD_LENGTH} 位` });
+    }
 
     try {
         const passwordHash = await bcrypt.hash(normalizedPassword, BCRYPT_SALT_ROUNDS);
@@ -583,6 +591,9 @@ app.post('/api/admin/users', requireAuthUser, requireAdmin, async (req, res) => 
     if (!username || !email || !password) {
         return res.status(400).json({ success: false, message: '用户名、邮箱和密码不能为空' });
     }
+    if (!isValidPasswordLength(password)) {
+        return res.status(400).json({ success: false, message: `密码至少需要 ${MIN_PASSWORD_LENGTH} 位` });
+    }
 
     try {
         const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
@@ -635,6 +646,9 @@ app.put('/api/admin/users/:id', requireAuthUser, requireAdmin, async (req, res) 
     }
     if (!username || !email) {
         return res.status(400).json({ success: false, message: '用户名和邮箱不能为空' });
+    }
+    if (password && !isValidPasswordLength(password)) {
+        return res.status(400).json({ success: false, message: `密码至少需要 ${MIN_PASSWORD_LENGTH} 位` });
     }
 
     try {
@@ -1323,6 +1337,9 @@ app.put('/api/user/profile', requireAuthUser, async (req, res) => {
                     : '';
 
         if (normalizedNewPassword) {
+            if (!isValidPasswordLength(normalizedNewPassword)) {
+                return res.status(400).json({ success: false, message: `密码至少需要 ${MIN_PASSWORD_LENGTH} 位` });
+            }
             const normalizedOldPassword = typeof oldPassword === 'string' ? oldPassword : '';
             if (!normalizedOldPassword) {
                 return res.status(400).json({ success: false, message: '请输入原密码' });

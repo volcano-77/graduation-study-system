@@ -1,0 +1,2049 @@
+{
+  "bug": "BUG-LR-002",
+  "runId": "20260917124504",
+  "startedAt": "2026-09-17T12:45:04.382Z",
+  "base": "http://localhost:3001",
+  "minimumLength": 4,
+  "sourceSha256": "7eb88ad3708d9546bbf3a384c02d4ed43a6d3264e9ef33766ddc589da4794b15",
+  "requests": [
+    {
+      "label": "Admin normal login",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "admin",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 3,
+          "username": "admin",
+          "role": "admin"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "register reject length 0",
+      "method": "POST",
+      "path": "/api/register",
+      "passwordField": "password",
+      "passwordLength": 0,
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-bad0",
+        "email": "fix-pwd-20260917124504-register-bad0@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "昵称、邮箱和密码不能为空"
+      },
+      "pass": true
+    },
+    {
+      "label": "register reject length 1",
+      "method": "POST",
+      "path": "/api/register",
+      "passwordField": "password",
+      "passwordLength": 1,
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-bad1",
+        "email": "fix-pwd-20260917124504-register-bad1@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "register reject length 3",
+      "method": "POST",
+      "path": "/api/register",
+      "passwordField": "password",
+      "passwordLength": 3,
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-bad3",
+        "email": "fix-pwd-20260917124504-register-bad3@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "Create register-min",
+      "method": "POST",
+      "path": "/api/register",
+      "passwordField": "password",
+      "passwordLength": 4,
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "email": "fix-pwd-20260917124504-register-min@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid login",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Create register-long",
+      "method": "POST",
+      "path": "/api/register",
+      "passwordField": "password",
+      "passwordLength": 16,
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-long",
+        "email": "fix-pwd-20260917124504-register-long@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid login",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-long",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 35,
+          "username": "FIX-PWD-20260917124504-register-long",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "register-alias reject length 0",
+      "method": "POST",
+      "path": "/register",
+      "passwordField": "password",
+      "passwordLength": 0,
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-alias-bad0",
+        "email": "fix-pwd-20260917124504-register-alias-bad0@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "昵称、邮箱和密码不能为空"
+      },
+      "pass": true
+    },
+    {
+      "label": "register-alias reject length 1",
+      "method": "POST",
+      "path": "/register",
+      "passwordField": "password",
+      "passwordLength": 1,
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-alias-bad1",
+        "email": "fix-pwd-20260917124504-register-alias-bad1@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "register-alias reject length 3",
+      "method": "POST",
+      "path": "/register",
+      "passwordField": "password",
+      "passwordLength": 3,
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-alias-bad3",
+        "email": "fix-pwd-20260917124504-register-alias-bad3@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "Create register-alias-min",
+      "method": "POST",
+      "path": "/register",
+      "passwordField": "password",
+      "passwordLength": 4,
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-alias-min",
+        "email": "fix-pwd-20260917124504-register-alias-min@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid login",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-alias-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 36,
+          "username": "FIX-PWD-20260917124504-register-alias-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Create register-alias-long",
+      "method": "POST",
+      "path": "/register",
+      "passwordField": "password",
+      "passwordLength": 16,
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-alias-long",
+        "email": "fix-pwd-20260917124504-register-alias-long@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid login",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-alias-long",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 37,
+          "username": "FIX-PWD-20260917124504-register-alias-long",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "admin-create reject length 0",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "passwordField": "password",
+      "passwordLength": 0,
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-bad0",
+        "email": "fix-pwd-20260917124504-admin-create-bad0@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "用户名、邮箱和密码不能为空"
+      },
+      "pass": true
+    },
+    {
+      "label": "admin-create reject length 1",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "passwordField": "password",
+      "passwordLength": 1,
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-bad1",
+        "email": "fix-pwd-20260917124504-admin-create-bad1@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "admin-create reject length 3",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "passwordField": "password",
+      "passwordLength": 3,
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-bad3",
+        "email": "fix-pwd-20260917124504-admin-create-bad3@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "Create admin-create-min",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "passwordField": "password",
+      "passwordLength": 4,
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "email": "fix-pwd-20260917124504-admin-create-min@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 38,
+          "username": "FIX-PWD-20260917124504-admin-create-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid login",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 38,
+          "username": "FIX-PWD-20260917124504-admin-create-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Create admin-create-long",
+      "method": "POST",
+      "path": "/api/admin/users",
+      "passwordField": "password",
+      "passwordLength": 16,
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-long",
+        "email": "fix-pwd-20260917124504-admin-create-long@example.invalid",
+        "password": "[REDACTED]",
+        "role": "user"
+      },
+      "expectedStatus": 201,
+      "actualStatus": 201,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 39,
+          "username": "FIX-PWD-20260917124504-admin-create-long",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Valid login",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-long",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 39,
+          "username": "FIX-PWD-20260917124504-admin-create-long",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Profile newPassword reject length 0",
+      "method": "PUT",
+      "path": "/api/user/profile",
+      "passwordField": "newPassword",
+      "passwordLength": 0,
+      "body": {
+        "oldPassword": "[REDACTED]",
+        "newPassword": "[REDACTED]"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "没有可更新的字段"
+      },
+      "pass": true
+    },
+    {
+      "label": "Original password still logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Profile newPassword reject length 1",
+      "method": "PUT",
+      "path": "/api/user/profile",
+      "passwordField": "newPassword",
+      "passwordLength": 1,
+      "body": {
+        "oldPassword": "[REDACTED]",
+        "newPassword": "[REDACTED]"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "Original password still logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Profile newPassword reject length 3",
+      "method": "PUT",
+      "path": "/api/user/profile",
+      "passwordField": "newPassword",
+      "passwordLength": 3,
+      "body": {
+        "oldPassword": "[REDACTED]",
+        "newPassword": "[REDACTED]"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "Original password still logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Profile newPassword accept length 4",
+      "method": "PUT",
+      "path": "/api/user/profile",
+      "passwordField": "newPassword",
+      "passwordLength": 4,
+      "body": {
+        "oldPassword": "[REDACTED]",
+        "newPassword": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "New password logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Profile newPassword accept length 16",
+      "method": "PUT",
+      "path": "/api/user/profile",
+      "passwordField": "newPassword",
+      "passwordLength": 16,
+      "body": {
+        "oldPassword": "[REDACTED]",
+        "newPassword": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "New password logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Profile password reject length 0",
+      "method": "PUT",
+      "path": "/api/user/profile",
+      "passwordField": "password",
+      "passwordLength": 0,
+      "body": {
+        "oldPassword": "[REDACTED]",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "没有可更新的字段"
+      },
+      "pass": true
+    },
+    {
+      "label": "Original password still logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Profile password reject length 1",
+      "method": "PUT",
+      "path": "/api/user/profile",
+      "passwordField": "password",
+      "passwordLength": 1,
+      "body": {
+        "oldPassword": "[REDACTED]",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "Original password still logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Profile password reject length 3",
+      "method": "PUT",
+      "path": "/api/user/profile",
+      "passwordField": "password",
+      "passwordLength": 3,
+      "body": {
+        "oldPassword": "[REDACTED]",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "Original password still logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Profile password accept length 4",
+      "method": "PUT",
+      "path": "/api/user/profile",
+      "passwordField": "password",
+      "passwordLength": 4,
+      "body": {
+        "oldPassword": "[REDACTED]",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "New password logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Profile password accept length 16",
+      "method": "PUT",
+      "path": "/api/user/profile",
+      "passwordField": "password",
+      "passwordLength": 16,
+      "body": {
+        "oldPassword": "[REDACTED]",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "New password logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-register-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 34,
+          "username": "FIX-PWD-20260917124504-register-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit empty leaves password unchanged",
+      "method": "PUT",
+      "path": "/api/admin/users/38",
+      "passwordField": "password",
+      "passwordLength": 0,
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "email": "fix-pwd-20260917124504-admin-create-min@example.invalid",
+        "role": "user",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 38,
+          "username": "FIX-PWD-20260917124504-admin-create-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Original password still logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 38,
+          "username": "FIX-PWD-20260917124504-admin-create-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit reject length 1",
+      "method": "PUT",
+      "path": "/api/admin/users/38",
+      "passwordField": "password",
+      "passwordLength": 1,
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "email": "fix-pwd-20260917124504-admin-create-min@example.invalid",
+        "role": "user",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "Original password still logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 38,
+          "username": "FIX-PWD-20260917124504-admin-create-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit reject length 3",
+      "method": "PUT",
+      "path": "/api/admin/users/38",
+      "passwordField": "password",
+      "passwordLength": 3,
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "email": "fix-pwd-20260917124504-admin-create-min@example.invalid",
+        "role": "user",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 400,
+      "actualStatus": 400,
+      "response": {
+        "success": false,
+        "message": "密码至少需要 4 位"
+      },
+      "pass": true
+    },
+    {
+      "label": "Original password still logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 38,
+          "username": "FIX-PWD-20260917124504-admin-create-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit accept length 4",
+      "method": "PUT",
+      "path": "/api/admin/users/38",
+      "passwordField": "password",
+      "passwordLength": 4,
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "email": "fix-pwd-20260917124504-admin-create-min@example.invalid",
+        "role": "user",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 38,
+          "username": "FIX-PWD-20260917124504-admin-create-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin-set password logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 38,
+          "username": "FIX-PWD-20260917124504-admin-create-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin edit accept length 16",
+      "method": "PUT",
+      "path": "/api/admin/users/38",
+      "passwordField": "password",
+      "passwordLength": 16,
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "email": "fix-pwd-20260917124504-admin-create-min@example.invalid",
+        "role": "user",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "user": {
+          "id": 38,
+          "username": "FIX-PWD-20260917124504-admin-create-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Admin-set password logs in",
+      "method": "POST",
+      "path": "/api/login",
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "token": "[REDACTED]",
+        "user": {
+          "id": 38,
+          "username": "FIX-PWD-20260917124504-admin-create-min",
+          "role": "user"
+        }
+      },
+      "pass": true
+    },
+    {
+      "label": "Login short wrong password keeps authentication semantics",
+      "method": "POST",
+      "path": "/api/login",
+      "passwordField": "password",
+      "passwordLength": 1,
+      "body": {
+        "username": "FIX-PWD-20260917124504-admin-create-min",
+        "password": "[REDACTED]"
+      },
+      "expectedStatus": 401,
+      "actualStatus": 401,
+      "response": {
+        "success": false,
+        "message": "用户名或密码错误"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup exact temporary user",
+      "method": "DELETE",
+      "path": "/api/admin/users/34",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup exact temporary user",
+      "method": "DELETE",
+      "path": "/api/admin/users/35",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup exact temporary user",
+      "method": "DELETE",
+      "path": "/api/admin/users/36",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup exact temporary user",
+      "method": "DELETE",
+      "path": "/api/admin/users/37",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup exact temporary user",
+      "method": "DELETE",
+      "path": "/api/admin/users/38",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    },
+    {
+      "label": "Cleanup exact temporary user",
+      "method": "DELETE",
+      "path": "/api/admin/users/39",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "response": {
+        "success": true,
+        "message": "用户删除成功"
+      },
+      "pass": true
+    }
+  ],
+  "guardChecks": [
+    {
+      "entry": "register",
+      "passwordLength": 1,
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "register",
+      "passwordLength": 3,
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "admin-create",
+      "passwordLength": 1,
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "admin-create",
+      "passwordLength": 3,
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "admin-edit",
+      "passwordLength": 1,
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "admin-edit",
+      "passwordLength": 3,
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "profile-newPassword",
+      "passwordLength": 1,
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "profile-newPassword",
+      "passwordLength": 3,
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "profile-password-alias",
+      "passwordLength": 1,
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    },
+    {
+      "entry": "profile-password-alias",
+      "passwordLength": 3,
+      "status": 400,
+      "dbCalls": 0,
+      "bcryptCalls": 0
+    }
+  ],
+  "sqlChecks": [
+    {
+      "label": "register rejected user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-PWD-20260917124504-register-bad0"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register rejected user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-PWD-20260917124504-register-bad1"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register rejected user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-PWD-20260917124504-register-bad3"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register rejected requests: no side effects",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 21,
+          "afterCount": 21,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "register-alias rejected user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-PWD-20260917124504-register-alias-bad0"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register-alias rejected user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-PWD-20260917124504-register-alias-bad1"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register-alias rejected user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-PWD-20260917124504-register-alias-bad3"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "register-alias rejected requests: no side effects",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 23,
+          "afterCount": 23,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "admin-create rejected user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-PWD-20260917124504-admin-create-bad0"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "admin-create rejected user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-PWD-20260917124504-admin-create-bad1"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "admin-create rejected user absent",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE username = ?",
+      "params": [
+        "FIX-PWD-20260917124504-admin-create-bad3"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "admin-create rejected requests: no side effects",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 25,
+          "afterCount": 25,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "Profile newPassword length 0: stored password unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        34
+      ],
+      "passwordUnchanged": true,
+      "allFieldsUnchanged": true
+    },
+    {
+      "label": "Profile newPassword length 1: stored password unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        34
+      ],
+      "passwordUnchanged": true,
+      "allFieldsUnchanged": true
+    },
+    {
+      "label": "Profile newPassword length 3: stored password unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        34
+      ],
+      "passwordUnchanged": true,
+      "allFieldsUnchanged": true
+    },
+    {
+      "label": "Profile newPassword rejected requests: no side effects",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 27,
+          "afterCount": 27,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "Profile newPassword length 4: password updated",
+      "id": 34,
+      "passwordChanged": true
+    },
+    {
+      "label": "Profile newPassword length 16: password updated",
+      "id": 34,
+      "passwordChanged": true
+    },
+    {
+      "label": "Profile password length 0: stored password unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        34
+      ],
+      "passwordUnchanged": true,
+      "allFieldsUnchanged": true
+    },
+    {
+      "label": "Profile password length 1: stored password unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        34
+      ],
+      "passwordUnchanged": true,
+      "allFieldsUnchanged": true
+    },
+    {
+      "label": "Profile password length 3: stored password unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        34
+      ],
+      "passwordUnchanged": true,
+      "allFieldsUnchanged": true
+    },
+    {
+      "label": "Profile password rejected requests: no side effects",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 27,
+          "afterCount": 27,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "Profile password length 4: password updated",
+      "id": 34,
+      "passwordChanged": true
+    },
+    {
+      "label": "Profile password length 16: password updated",
+      "id": 34,
+      "passwordChanged": true
+    },
+    {
+      "label": "Admin edit length 0: stored password unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        38
+      ],
+      "passwordUnchanged": true,
+      "allFieldsUnchanged": true
+    },
+    {
+      "label": "Admin edit length 1: stored password unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        38
+      ],
+      "passwordUnchanged": true,
+      "allFieldsUnchanged": true
+    },
+    {
+      "label": "Admin edit length 3: stored password unchanged",
+      "query": "SELECT * FROM users WHERE id = ?",
+      "params": [
+        38
+      ],
+      "passwordUnchanged": true,
+      "allFieldsUnchanged": true
+    },
+    {
+      "label": "Admin edit empty/short requests: no side effects",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 27,
+          "afterCount": 27,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    },
+    {
+      "label": "Admin edit length 4: password updated",
+      "id": 38,
+      "passwordChanged": true
+    },
+    {
+      "label": "Admin edit length 16: password updated",
+      "id": 38,
+      "passwordChanged": true
+    },
+    {
+      "label": "Final FIX-PWD cleanup",
+      "query": "SELECT COUNT(*) AS count FROM users WHERE LEFT(username, 8) = ?",
+      "params": [
+        "FIX-PWD-"
+      ],
+      "rows": [
+        {
+          "count": 0
+        }
+      ]
+    },
+    {
+      "label": "Final baseline: every original row and field unchanged",
+      "query": "SELECT * FROM <each listed table> ORDER BY id",
+      "checks": [
+        {
+          "table": "users",
+          "beforeCount": 21,
+          "afterCount": 21,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "groups_table",
+          "beforeCount": 11,
+          "afterCount": 11,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_members",
+          "beforeCount": 35,
+          "afterCount": 35,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "tasks",
+          "beforeCount": 18,
+          "afterCount": 18,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "discussions",
+          "beforeCount": 32,
+          "afterCount": 32,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "notifications",
+          "beforeCount": 30,
+          "afterCount": 30,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "shared_files",
+          "beforeCount": 0,
+          "afterCount": 0,
+          "allFieldsUnchanged": true
+        },
+        {
+          "table": "group_files",
+          "beforeCount": 5,
+          "afterCount": 5,
+          "allFieldsUnchanged": true
+        }
+      ]
+    }
+  ],
+  "temporaryUsers": [
+    {
+      "id": 34,
+      "username": "FIX-PWD-20260917124504-register-min"
+    },
+    {
+      "id": 35,
+      "username": "FIX-PWD-20260917124504-register-long"
+    },
+    {
+      "id": 36,
+      "username": "FIX-PWD-20260917124504-register-alias-min"
+    },
+    {
+      "id": 37,
+      "username": "FIX-PWD-20260917124504-register-alias-long"
+    },
+    {
+      "id": 38,
+      "username": "FIX-PWD-20260917124504-admin-create-min"
+    },
+    {
+      "id": 39,
+      "username": "FIX-PWD-20260917124504-admin-create-long"
+    }
+  ],
+  "result": "PASS",
+  "cleanup": "PASS: FIX-PWD users = 0; all original table rows unchanged",
+  "finishedAt": "2026-09-17T12:45:07.585Z",
+  "restartAndFinalBaseline": {
+    "checks": [
+      {
+        "stage": "latest-clean-main-restart",
+        "checks": [
+          {
+            "table": "users",
+            "beforeCount": 21,
+            "afterCount": 21,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "groups_table",
+            "beforeCount": 11,
+            "afterCount": 11,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "group_members",
+            "beforeCount": 35,
+            "afterCount": 35,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "tasks",
+            "beforeCount": 18,
+            "afterCount": 18,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "discussions",
+            "beforeCount": 32,
+            "afterCount": 32,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "notifications",
+            "beforeCount": 30,
+            "afterCount": 30,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "shared_files",
+            "beforeCount": 0,
+            "afterCount": 0,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "group_files",
+            "beforeCount": 5,
+            "afterCount": 5,
+            "allFieldsUnchanged": true
+          }
+        ]
+      },
+      {
+        "stage": "password-fix-restart",
+        "checks": [
+          {
+            "table": "users",
+            "beforeCount": 21,
+            "afterCount": 21,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "groups_table",
+            "beforeCount": 11,
+            "afterCount": 11,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "group_members",
+            "beforeCount": 35,
+            "afterCount": 35,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "tasks",
+            "beforeCount": 18,
+            "afterCount": 18,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "discussions",
+            "beforeCount": 32,
+            "afterCount": 32,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "notifications",
+            "beforeCount": 30,
+            "afterCount": 30,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "shared_files",
+            "beforeCount": 0,
+            "afterCount": 0,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "group_files",
+            "beforeCount": 5,
+            "afterCount": 5,
+            "allFieldsUnchanged": true
+          }
+        ]
+      },
+      {
+        "stage": "final",
+        "checks": [
+          {
+            "table": "users",
+            "beforeCount": 21,
+            "afterCount": 21,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "groups_table",
+            "beforeCount": 11,
+            "afterCount": 11,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "group_members",
+            "beforeCount": 35,
+            "afterCount": 35,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "tasks",
+            "beforeCount": 18,
+            "afterCount": 18,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "discussions",
+            "beforeCount": 32,
+            "afterCount": 32,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "notifications",
+            "beforeCount": 30,
+            "afterCount": 30,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "shared_files",
+            "beforeCount": 0,
+            "afterCount": 0,
+            "allFieldsUnchanged": true
+          },
+          {
+            "table": "group_files",
+            "beforeCount": 5,
+            "afterCount": 5,
+            "allFieldsUnchanged": true
+          }
+        ]
+      }
+    ]
+  }
+}
