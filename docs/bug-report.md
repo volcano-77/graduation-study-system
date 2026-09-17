@@ -348,7 +348,7 @@ SQL确认非法邮箱真实写入现有用户：
 | 修复后验证批次 | `20260917131115`，真实后端 `http://localhost:3001` |
 | 修改文件 | `server/index.js`，新增共享邮箱格式校验并接入全部实际邮箱写入口 |
 | 统一规则 | trim并转为小写后必须匹配 `^[^\s@]+@[^\s@]+\.[^\s@]+$`；不增加域名可达性、MX、复杂度或最大长度策略 |
-| 修复 commit | 待本次源码提交创建后回填 |
+| 修复 commit | [`f0c6e03762b68cedd30f2ff0dba3d80ca1e36846`](https://github.com/volcano-77/graduation-study-system/commit/f0c6e03762b68cedd30f2ff0dba3d80ca1e36846) — `fix: validate user email formats` |
 
 **实际影响入口与根因：** 前端注册页和管理员用户表单使用HTML `type="email"`，只能约束正常页面提交；后端没有可复用的邮箱校验器，只检查必填或直接写库。源码定位确认实际写邮箱的入口为共享处理器下的 `POST /api/register` 与兼容路由 `POST /register`、管理员创建 `POST /api/admin/users`、管理员编辑 `PUT /api/admin/users/:id`、旧资料更新 `PUT /api/users/:id`。其中管理员编辑也是同类受影响入口；`PUT /api/user/profile` 不写邮箱，其余email引用为读取、搜索或展示。
 
