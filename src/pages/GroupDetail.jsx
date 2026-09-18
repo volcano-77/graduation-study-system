@@ -692,7 +692,6 @@ function GroupDetail() {
     try {
       const formData = new FormData();
       formData.append('file', selectedUploadFile);
-      formData.append('uploader_id', String(currentUserId));
 
       const token = localStorage.getItem('token');
       const response = await axios.post(`${API_BASE_URL}/api/groups/${groupId}/files`, formData, {
@@ -732,7 +731,10 @@ function GroupDetail() {
 
     setFileError('');
     try {
-      const response = await axios.delete(`${API_BASE_URL}/api/groups/${groupId}/files/${normalizedFileId}`);
+      const token = localStorage.getItem('token');
+      const response = await axios.delete(`${API_BASE_URL}/api/groups/${groupId}/files/${normalizedFileId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       const data = response?.data;
       if (!data?.success) {
         throw new Error(data?.message || '删除文件失败');
@@ -1276,7 +1278,7 @@ function GroupDetail() {
           <div className="divide-y divide-[#ECEBE8]">
             {sharedFiles.map((item) => {
               const downloadUrl = buildDownloadUrl(item.file_url);
-              const canDelete = Number(currentUserId) === Number(item.uploader_id);
+              const canDelete = Number(currentUserId) === Number(item.uploader_id) || isGroupOwner;
               return (
                 <article
                   key={item.id}

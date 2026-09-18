@@ -554,6 +554,27 @@ async function getGroupAccess(groupId, userId) {
     };
 }
 
+async function requireExistingGroupMemberBeforeUpload(req, res, next) {
+    const groupId = Number.parseInt(req.params.groupId, 10);
+    if (!Number.isInteger(groupId) || groupId <= 0) {
+        return next();
+    }
+
+    try {
+        const access = await getGroupAccess(groupId, req.currentUser.id);
+        if (!access.exists) {
+            return next();
+        }
+        if (!access.isMember) {
+            return res.status(403).json({ success: false, message: '无权向该小组上传文件' });
+        }
+        return next();
+    } catch (error) {
+        console.error('校验文件上传权限失败:', error);
+        return res.status(500).json({ success: false, message: '服务器错误' });
+    }
+}
+
 // 登录接口（保留 /api/login，同时兼容 /login）
 app.post('/api/login', handleLogin);
 app.post('/login', handleLogin);
@@ -2687,15 +2708,12 @@ app.post('/api/groups/:id/shared-files', requireAuthUser, async (req, res) => {
 });
 
 // 上传小组文件（multer）
-app.post('/api/groups/:groupId/files', upload.single('file'), async (req, res) => {
+app.post('/api/groups/:groupId/files', requireAuthUser, requireExistingGroupMemberBeforeUpload, upload.single('file'), async (req, res) => {
     const groupId = Number.parseInt(req.params.groupId, 10);
-    const uploaderId = Number.parseInt(req.body?.uploader_id, 10);
+    const uploaderId = req.currentUser.id;
 
     if (!Number.isInteger(groupId) || groupId <= 0) {
         return res.status(400).json({ success: false, message: '无效的小组ID' });
-    }
-    if (!Number.isInteger(uploaderId) || uploaderId <= 0) {
-        return res.status(400).json({ success: false, message: '无效的上传者ID' });
     }
     if (!req.file) {
         return res.status(400).json({ success: false, message: '未检测到上传文件' });
@@ -2733,13 +2751,21 @@ app.post('/api/groups/:groupId/files', upload.single('file'), async (req, res) =
 });
 
 // 获取小组文件列表（group_files）
-app.get('/api/groups/:groupId/files', async (req, res) => {
+app.get('/api/groups/:groupId/files', requireAuthUser, async (req, res) => {
     const groupId = Number.parseInt(req.params.groupId, 10);
     if (!Number.isInteger(groupId) || groupId <= 0) {
         return res.status(400).json({ success: false, message: '无效的小组ID' });
     }
 
     try {
+        const access = await getGroupAccess(groupId, req.currentUser.id);
+        if (!access.exists) {
+            return res.status(404).json({ success: false, message: '小组不存在' });
+        }
+        if (!access.isMember) {
+            return res.status(403).json({ success: false, message: '无权访问该小组文件' });
+        }
+
         const [rows] = await pool.execute(
             `
                 SELECT
@@ -2770,9 +2796,10 @@ app.get('/api/groups/:groupId/files', async (req, res) => {
 });
 
 // 删除小组文件（删除磁盘文件 + 删除数据库记录）
-app.delete('/api/groups/:groupId/files/:fileId', async (req, res) => {
+app.delete('/api/groups/:groupId/files/:fileId', requireAuthUser, async (req, res) => {
     const groupId = Number.parseInt(req.params.groupId, 10);
     const fileId = Number.parseInt(req.params.fileId, 10);
+    const currentUserId = req.currentUser.id;
 
     if (!Number.isInteger(groupId) || groupId <= 0) {
         return res.status(400).json({ success: false, message: '无效的小组ID' });
@@ -2782,12 +2809,13 @@ app.delete('/api/groups/:groupId/files/:fileId', async (req, res) => {
     }
 
     try {
-        // 第一步：查询 file_url
+        // 第一步：查询文件归属并校验当前用户权限
         const [fileRows] = await pool.execute(
             `
-                SELECT file_url
-                FROM group_files
-                WHERE id = ? AND group_id = ?
+                SELECT gf.file_url, gf.uploader_id, g.owner_id
+                FROM group_files gf
+                INNER JOIN groups_table g ON g.id = gf.group_id
+                WHERE gf.id = ? AND gf.group_id = ?
                 LIMIT 1
             `,
             [fileId, groupId]
@@ -2797,7 +2825,18 @@ app.delete('/api/groups/:groupId/files/:fileId', async (req, res) => {
             return res.status(404).json({ success: false, message: '文件不存在' });
         }
 
-        const fileUrl = typeof fileRows[0].file_url === 'string' ? fileRows[0].file_url : '';
+        const access = await getGroupAccess(groupId, currentUserId);
+        if (!access.isMember) {
+            return res.status(403).json({ success: false, message: '无权删除该小组文件' });
+        }
+
+        const targetFile = fileRows[0];
+        const isUploader = Number(targetFile.uploader_id) === Number(currentUserId);
+        if (!isUploader && !access.isOwner) {
+            return res.status(403).json({ success: false, message: '只能删除自己上传的文件' });
+        }
+
+        const fileUrl = typeof targetFile.file_url === 'string' ? targetFile.file_url : '';
         const fileName = path.basename(fileUrl);
 
         // 第二步：删除本地硬盘文件（即使文件不存在也不中断）

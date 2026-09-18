@@ -876,6 +876,50 @@ GET和POST都使用 `Number.parseInt`；GET随后直接查询 discussions，没�
 
 ![BUG-FILE-001：匿名删除返回200](./screenshots/FILE-014-anonymous-prefixed-delete-api.png)
 
+### 修复与定向回归追加记录（2026-09-18，BUG-FILE-001）
+
+> 上面的“待修复”、原始缺陷描述、实际结果、代码关联及5张修复前截图为发现阶段记录，完整保留。以下只追加本次权限修复与验证，不否认匿名、非成员和普通成员曾能越权读写文件的历史。
+
+| 项目 | 内容 |
+| --- | --- |
+| 当前修复状态 | **已修复并验证** |
+| 修复日期 | 2026-09-18（UTC+8） |
+| 验证批次 | `20260918065543`，真实后端 `http://localhost:3001`、真实前端 `http://localhost:5173` |
+| 修改文件 | `server/index.js`、`src/pages/GroupDetail.jsx` |
+| 修复 commit | 待正式提交后回填 |
+
+**实际接口范围与原权限模型：** `GET /api/groups/:groupId/files`、`POST /api/groups/:groupId/files`、`DELETE /api/groups/:groupId/files/:fileId` 原来均没有 `requireAuthUser`；列表不检查成员，上传不检查成员且Multer直接落盘，删除不检查调用者与文件关系。`GET /api/files/recent`、`GET /api/files/all` 原本已有认证和owner/member范围过滤；管理员 `GET /api/admin/files`、`DELETE /api/admin/files/:fileId` 原本已有认证与管理员校验；旧 `shared_files` 表的接口也已有认证与成员/归属校验。没有按fileId下载的业务API，物理文件仍通过 `/uploads` 静态路由访问，后者属于BUG-FILE-003，本次未改。
+
+**根因与修复方式：** 普通 `group_files` 三条路由没有建立服务端身份与资源授权边界。列表现在要求有效token，并复用 `getGroupAccess()` 校验当前用户为目标组owner或成员；上传先执行认证，再对已存在目标小组执行成员校验，只有通过后才进入Multer；删除先认证，再要求调用者仍是该组owner或成员，且只有文件上传者或组长能够删除。管理员继续使用原有独立管理接口。本轮保留 `Number.parseInt` 的既有ID行为，不处理BUG-FILE-005。
+
+**修复后权限规则：**
+
+| 操作 | 匿名 | 非成员 | 普通成员 | 上传者 | 组长 | 管理员 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 小组文件列表 | 401 | 403 | 200 | 200 | 200 | 使用既有管理员列表 |
+| 小组文件上传 | 401 | 403 | 200 | 200 | 200 | 非成员时不走普通上传路径 |
+| 普通文件删除 | 401 | 403 | 他人文件403 | 自己文件200 | 本组文件200 | 使用既有管理员删除路径200 |
+
+**真实验证结果：** 创建临时owner 52、member 53、outsider 54及group 40。匿名列表、上传、删除均返回401；非成员三类操作均返回403；合法成员与组长列表均返回200。匿名和非成员上传失败前后 `group_files` 变化为0、uploads变化为0；匿名和非成员删除失败后目标仍为DB 1且物理文件存在。普通成员删除组长文件返回403且无副作用；上传者删除自己文件、组长删除成员文件均返回200并同时清理DB和物理文件；管理员全站文件列表与既有管理员删除接口均返回200。
+
+**小范围回归：** 合法成员真实登录后，Dashboard“最新资料速递”正常显示授权文件；`GET /api/files/recent`、`GET /api/files/all`、Dashboard统计、成员/组长的小组文件列表均返回200；进入group 40资料共享页正常显示文件，成员自己的文件显示删除按钮、他人文件不显示，上传者、组长和管理员删除路径均通过。
+
+**数据与文件清理：** 所有测试文件按精确file ID删除，临时group 40和users 52/53/54按精确ID删除。最终 `users`、`groups_table`、`group_files`、`group_members`、`notifications`、`tasks`、`discussions`、`shared_files` 相关记录均为0，临时物理文件为0，uploads集合恢复到基线；A/B/C/admin正式账号字段无变化，未操作group31。
+
+**已知问题边界：** 匿名和已知非成员上传因在Multer前被拒绝，本轮没有产生孤儿文件；非法或不存在group导致的通用上传失败路径未增加清理逻辑、也未在本轮扩测，BUG-FILE-006仍保持未修复。静态 `/uploads` 匿名访问、文件类型和宽松ID分别仍归BUG-FILE-003、004、005。
+
+**修复后证据：**
+
+![BUG-FILE-001：匿名列表上传删除均返回401且无副作用](./screenshots/FIX-FILE-001-anonymous-401.png)
+
+![BUG-FILE-001：非成员列表上传删除均返回403且无副作用](./screenshots/FIX-FILE-001-nonmember-403.png)
+
+![BUG-FILE-001：删除权限矩阵验证](./screenshots/FIX-FILE-001-delete-permission.png)
+
+![BUG-FILE-001：合法成员页面流程正常](./screenshots/FIX-FILE-001-valid-flow.png)
+
+![BUG-FILE-001/002：临时数据库与物理文件清理完成](./screenshots/FIX-FILE-001-002-cleanup.png)
+
 ## BUG-FILE-002：上传接口信任客户端uploader_id，允许匿名伪造资源归属
 
 ### 基本信息
@@ -906,6 +950,34 @@ GET和POST都使用 `Number.parseInt`；GET随后直接查询 discussions，没�
 ![BUG-FILE-002：匿名伪造上传者并上传](./screenshots/FILE-007-anonymous-spoof-upload.png)
 
 ![BUG-FILE-002：伪造归属写入数据库](./screenshots/FILE-007-spoof-sql.png)
+
+### 修复与定向回归追加记录（2026-09-18，BUG-FILE-002）
+
+> 上面的“待修复”、原始缺陷描述、实际结果、代码关联及2张修复前截图为发现阶段记录，完整保留。以下只追加身份可信性修复与验证，不否认匿名调用者曾能把文件伪造归属到合法用户的历史。
+
+| 项目 | 内容 |
+| --- | --- |
+| 当前修复状态 | **已修复并验证** |
+| 修复日期 | 2026-09-18（UTC+8） |
+| 验证批次 | `20260918065543`，与BUG-FILE-001共用临时权限验证环境 |
+| 修改文件 | `server/index.js`、`src/pages/GroupDetail.jsx` |
+| 修复 commit | 待正式提交后回填 |
+
+**根因：** 普通文件上传接口直接解析 multipart 中的 `req.body.uploader_id` 并写入 `group_files.uploader_id`，没有认证上下文；前端正常流程也主动发送该字段。因此调用者可以匿名提交任意已有用户ID，数据库无法区分真实上传者与被冒用身份。
+
+**修复方式与身份规则：** 上传路由新增 `requireAuthUser`，落库身份只取服务端认证中间件写入的 `req.currentUser.id`；不再读取或信任客户端 `uploader_id`。前端上传表单同步停止发送该字段。匿名请求在Multer前返回401，已登录非成员在Multer前返回403；只有目标组成员可以进入文件解析和数据库写入。
+
+**身份伪造定向验证：** 认证用户member 53上传文件时，multipart故意提交 `uploader_id=52`。接口保持合法上传语义返回200，但响应与只读SQL均确认 `group_files.uploader_id=53`、username为 `FIX-FILE-AUTH-MEMBER-20260918065543`，与认证身份一致且不等于伪造值52。随后该用户可按上传者权限删除自己的文件；伪造身份没有生效。
+
+**回归与副作用：** 合法成员上传、列表、Dashboard/recent/all-files展示和上传者删除均正常。匿名及非成员失败上传的DB与物理文件变化均为0。验证结束后临时用户、小组、文件记录与物理文件全部清理，正式账号和group31无变化。
+
+**修复后证据：**
+
+![BUG-FILE-002：请求中的伪造上传者未生效](./screenshots/FIX-FILE-002-spoof-rejected-or-overridden.png)
+
+![BUG-FILE-002：SQL归属与认证用户一致](./screenshots/FIX-FILE-002-db-identity.png)
+
+![BUG-FILE-001/002：临时数据库与物理文件清理完成](./screenshots/FIX-FILE-001-002-cleanup.png)
 
 ## BUG-FILE-003：公开uploads静态资源缺少认证与小组授权
 
