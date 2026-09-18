@@ -554,6 +554,31 @@ async function getGroupAccess(groupId, userId) {
     };
 }
 
+async function getTaskAccess(taskId, userId) {
+    const [taskRows] = await pool.execute(
+        'SELECT id, group_id FROM tasks WHERE id = ? LIMIT 1',
+        [taskId]
+    );
+
+    if (taskRows.length === 0) {
+        return {
+            exists: false,
+            task: null,
+            isOwner: false,
+            isMember: false
+        };
+    }
+
+    const task = taskRows[0];
+    const groupAccess = await getGroupAccess(task.group_id, userId);
+    return {
+        exists: true,
+        task,
+        isOwner: groupAccess.isOwner,
+        isMember: groupAccess.isMember
+    };
+}
+
 async function requireExistingGroupMemberBeforeUpload(req, res, next) {
     const groupId = Number.parseInt(req.params.groupId, 10);
     if (!Number.isInteger(groupId) || groupId <= 0) {
@@ -1736,14 +1761,29 @@ app.get('/api/global/files', requireAuthUser, async (req, res) => {
 // 获取任务列表接口
 app.get('/api/tasks', requireAuthUser, async (req, res) => {
     const { group_id } = req.query;
+    const currentUserId = req.currentUser.id;
     
     try {
         let query = 'SELECT * FROM tasks';
         let params = [];
         
         if (group_id) {
+            const access = await getGroupAccess(group_id, currentUserId);
+            if (access.exists && !access.isMember) {
+                return res.status(403).json({ success: false, message: '无权访问该小组任务' });
+            }
             query += ' WHERE group_id = ?';
             params.push(group_id);
+        } else {
+            query = `
+                SELECT DISTINCT t.*
+                FROM tasks t
+                INNER JOIN groups_table g ON g.id = t.group_id
+                LEFT JOIN group_members gm
+                  ON gm.group_id = g.id AND gm.user_id = ?
+                WHERE g.owner_id = ? OR gm.user_id IS NOT NULL
+            `;
+            params = [currentUserId, currentUserId];
         }
         
         const [rows] = await pool.execute(query, params);
@@ -1773,6 +1813,11 @@ app.post('/api/tasks', requireAuthUser, async (req, res) => {
                 success: false,
                 message: `状态值非法，仅支持：${TASK_STATUS_OPTIONS.join('、')}`
             });
+        }
+
+        const access = await getGroupAccess(group_id, req.currentUser.id);
+        if (access.exists && !access.isMember) {
+            return res.status(403).json({ success: false, message: '无权向该小组创建任务' });
         }
         
         const [result] = await pool.execute(
@@ -1877,6 +1922,11 @@ app.put('/api/tasks/:id', requireAuthUser, async (req, res) => {
             });
         }
 
+        const access = await getTaskAccess(id, req.currentUser.id);
+        if (access.exists && !access.isMember) {
+            return res.status(403).json({ success: false, message: '无权修改该任务' });
+        }
+
         const [result] = await pool.execute(
             'UPDATE tasks SET status = ? WHERE id = ?',
             [normalizedStatus, id]
@@ -1901,6 +1951,11 @@ app.delete('/api/tasks/:id', requireAuthUser, async (req, res) => {
     console.log('收到删除任务请求，任务ID:', id);
     
     try {
+        const access = await getTaskAccess(id, req.currentUser.id);
+        if (access.exists && !access.isMember) {
+            return res.status(403).json({ success: false, message: '无权删除该任务' });
+        }
+
         console.log('执行删除操作，任务ID:', id);
         const [result] = await pool.execute(
             'DELETE FROM tasks WHERE id = ?',
