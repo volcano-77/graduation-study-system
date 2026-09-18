@@ -1073,7 +1073,7 @@ multer 仅配置磁盘存储和文件名，没有 `fileFilter`、MIME/扩展名�
 | 修复日期 | 2026-09-18（UTC+8） |
 | 验证批次 | `20260918030850`，真实前端 `http://localhost:5173`、真实后端 `http://localhost:3001` |
 | 修改文件 | `src/pages/AllFiles.jsx`，只修正资料集锦“获取”链接的 URL 解析 |
-| 修复 commit | 待正式提交后回填 |
+| 修复 commit | [`7b3a8771ad3534772af4101cf066aed35016a4d0`](https://github.com/volcano-77/graduation-study-system/commit/7b3a8771ad3534772af4101cf066aed35016a4d0) — `fix: resolve file download URLs` |
 
 **根因：** 后端 `group_files.file_url` 保存并返回 `/uploads/...` 相对路径，物理文件由 Express 在3001端口的 `/uploads` 静态路由提供。资料集锦页面原先直接把该相对路径赋给 `<a href>`，浏览器按照当前页面 origin 把它解析为5173端口；Vite 对该路径回退到前端 `index.html`，因此出现HTTP 200但内容不是目标文件。Dashboard和小组详情页已经使用 `API_BASE_URL` 补全相对文件地址，资料集锦页面未采用同一规则。
 
