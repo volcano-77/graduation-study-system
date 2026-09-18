@@ -801,7 +801,7 @@ GET只校验登录，未调用成员访问检查；POST发现没有成员记录�
 | 修复日期 | 2026-09-18（UTC+8） |
 | 验证批次 | `20260918111027`，真实后端 `http://localhost:3001`、本地 MySQL |
 | 修改文件 | `server/index.js` |
-| 修复 commit | 待正式提交后回填 |
+| 修复 commit | [`cda0f0f70860ad03d5a06fee10b2c2ea7814d80a`](https://github.com/volcano-77/graduation-study-system/commit/cda0f0f70860ad03d5a06fee10b2c2ea7814d80a) — `fix: enforce discussion group permissions` |
 
 **实际接口与原权限模型：** 普通讨论REST入口只有 `GET /api/groups/:id/discussions` 和 `POST /api/groups/:id/discussions`，两条路由原来均只有 `requireAuthUser`，没有校验当前用户是否为目标小组组长或成员。项目不存在普通讨论删除接口、按discussionId操作接口或独立管理员讨论管理接口，因此本轮没有虚构这些用例。前端讨论区通过上述GET/POST完成列表读取和发送，POST成功后仍由既有Socket广播更新消息。
 
