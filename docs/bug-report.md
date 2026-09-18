@@ -886,7 +886,7 @@ GET和POST都使用 `Number.parseInt`；GET随后直接查询 discussions，没�
 | 修复日期 | 2026-09-18（UTC+8） |
 | 验证批次 | `20260918065543`，真实后端 `http://localhost:3001`、真实前端 `http://localhost:5173` |
 | 修改文件 | `server/index.js`、`src/pages/GroupDetail.jsx` |
-| 修复 commit | 待正式提交后回填 |
+| 修复 commit | [`d144f851e89e1b07d6c5edf5df0c7e5eebd3a4e8`](https://github.com/volcano-77/graduation-study-system/commit/d144f851e89e1b07d6c5edf5df0c7e5eebd3a4e8) — `fix: enforce file access permissions` |
 
 **实际接口范围与原权限模型：** `GET /api/groups/:groupId/files`、`POST /api/groups/:groupId/files`、`DELETE /api/groups/:groupId/files/:fileId` 原来均没有 `requireAuthUser`；列表不检查成员，上传不检查成员且Multer直接落盘，删除不检查调用者与文件关系。`GET /api/files/recent`、`GET /api/files/all` 原本已有认证和owner/member范围过滤；管理员 `GET /api/admin/files`、`DELETE /api/admin/files/:fileId` 原本已有认证与管理员校验；旧 `shared_files` 表的接口也已有认证与成员/归属校验。没有按fileId下载的业务API，物理文件仍通过 `/uploads` 静态路由访问，后者属于BUG-FILE-003，本次未改。
 
@@ -961,7 +961,7 @@ GET和POST都使用 `Number.parseInt`；GET随后直接查询 discussions，没�
 | 修复日期 | 2026-09-18（UTC+8） |
 | 验证批次 | `20260918065543`，与BUG-FILE-001共用临时权限验证环境 |
 | 修改文件 | `server/index.js`、`src/pages/GroupDetail.jsx` |
-| 修复 commit | 待正式提交后回填 |
+| 修复 commit | [`d144f851e89e1b07d6c5edf5df0c7e5eebd3a4e8`](https://github.com/volcano-77/graduation-study-system/commit/d144f851e89e1b07d6c5edf5df0c7e5eebd3a4e8) — `fix: enforce file access permissions` |
 
 **根因：** 普通文件上传接口直接解析 multipart 中的 `req.body.uploader_id` 并写入 `group_files.uploader_id`，没有认证上下文；前端正常流程也主动发送该字段。因此调用者可以匿名提交任意已有用户ID，数据库无法区分真实上传者与被冒用身份。
 
