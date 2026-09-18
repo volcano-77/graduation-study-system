@@ -2556,6 +2556,11 @@ app.get('/api/groups/:id/discussions', requireAuthUser, async (req, res) => {
     }
 
     try {
+        const access = await getGroupAccess(groupId, req.currentUser.id);
+        if (access.exists && !access.isMember) {
+            return res.status(403).json({ success: false, message: '无权访问该小组讨论' });
+        }
+
         const [rows] = await pool.execute(
             `
                 SELECT
@@ -2607,17 +2612,9 @@ app.post('/api/groups/:id/discussions', requireAuthUser, async (req, res) => {
             return res.status(404).json({ success: false, message: '小组不存在' });
         }
 
-        const [memberRows] = await pool.execute(
-            'SELECT id FROM group_members WHERE group_id = ? AND user_id = ? LIMIT 1',
-            [groupId, userId]
-        );
-
-        if (memberRows.length === 0) {
-            const role = groupRows[0].owner_id === userId ? '组长' : '成员';
-            await pool.execute(
-                'INSERT INTO group_members (group_id, user_id, role) VALUES (?, ?, ?)',
-                [groupId, userId, role]
-            );
+        const access = await getGroupAccess(groupId, userId);
+        if (!access.isMember) {
+            return res.status(403).json({ success: false, message: '无权向该小组发送讨论' });
         }
 
         const [insertResult] = await pool.execute(

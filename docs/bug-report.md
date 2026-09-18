@@ -791,6 +791,48 @@ GET只校验登录，未调用成员访问检查；POST发现没有成员记录�
 
 ![BUG-DISC-001补充证据：非成员被自动加入小组](./screenshots/DISC-MENTION-006-auto-join-sql.png)
 
+### 修复与定向回归追加记录（2026-09-18，BUG-DISC-001）
+
+> 上面的“待修复”、原始缺陷描述、实际结果、代码关联及7张修复前截图为发现阶段记录，完整保留。以下只追加本次REST权限修复与验证，不否认非成员曾能读取、发送讨论并被发送路径自动加入小组的历史。
+
+| 项目 | 内容 |
+| --- | --- |
+| 当前修复状态 | **已修复并验证** |
+| 修复日期 | 2026-09-18（UTC+8） |
+| 验证批次 | `20260918111027`，真实后端 `http://localhost:3001`、本地 MySQL |
+| 修改文件 | `server/index.js` |
+| 修复 commit | 待正式提交后回填 |
+
+**实际接口与原权限模型：** 普通讨论REST入口只有 `GET /api/groups/:id/discussions` 和 `POST /api/groups/:id/discussions`，两条路由原来均只有 `requireAuthUser`，没有校验当前用户是否为目标小组组长或成员。项目不存在普通讨论删除接口、按discussionId操作接口或独立管理员讨论管理接口，因此本轮没有虚构这些用例。前端讨论区通过上述GET/POST完成列表读取和发送，POST成功后仍由既有Socket广播更新消息。
+
+**根因与自动入组根因：** 登录认证之后缺少小组资源级授权。GET直接按group id返回讨论；POST在发现当前用户没有 `group_members` 记录时，会把当前用户以“组长”或“成员”身份插入目标小组，然后继续写入discussion。这把发送讨论错误地变成了隐式入组入口，绕过了邀请和成员管理流程。
+
+**修复方式：** GET在查询讨论前复用既有 `getGroupAccess()`，目标小组存在但当前用户不是owner/member时返回403。POST保留既有小组存在性检查，删除自动写入 `group_members` 的代码，改为在写discussion之前通过 `getGroupAccess()` 校验当前用户必须为组长或成员；非成员返回403。合法成员的discussion写入、返回结构和既有 `new_message` Socket广播保持不变。本轮没有修改Socket.IO握手认证、`join_group`房间授权或讨论ID解析逻辑。
+
+**修复后REST权限模型：** 未登录读取或发送均返回401；已登录非成员读取或发送均返回403；目标小组组长和成员可正常读取、发送。讨论发送不再创建任何成员关系，加入小组继续只能通过既有邀请或成员管理业务入口。
+
+**真实HTTP与SQL验证结果：** 使用独立临时owner、member、outsider和临时小组完成验证。匿名GET与POST均返回401；非成员GET返回403；非成员分别发送普通消息和mention消息，两次均返回403。SQL确认两次拒绝前后目标discussion为0、outsider成员关系为0、小组成员总数不变。合法成员GET和POST均返回200，SQL确认落库discussion的 `group_id` 正确、`user_id` 来自当前认证成员、内容一致；重新GET仍能读取该消息，证明持久化正常，既有合法消息Socket广播也正常收到。
+
+**删除与管理员能力：** 当前项目没有普通讨论删除接口，也没有独立管理员讨论管理接口，因此无对应回归项；本轮没有新增或改变删除权限语义。
+
+**副作用、回归与清理：** 所有401/403请求均未新增discussion、`group_members`或notification，目标小组成员数量不变。`demo_user` 真实登录后读取group31讨论返回200，讨论数量与验证前基线一致。测试结束后临时用户、小组、讨论、成员关系和通知均为0；A/B/C/admin账号及group31的组信息、成员、讨论和通知逐项对比均未改变。README和原功能测试统计未修改。
+
+**Socket.IO边界：** 本次只完成BUG-DISC-001的REST接口授权修复。合法成员REST发送后的既有广播流程已回归通过，但Socket.IO连接和加入房间仍缺少独立认证与成员授权，继续作为BUG-DISC-002保留；不能据此声称实时消息权限已完全安全。BUG-DISC-003的参数解析与资源语义也保持原状态。
+
+**修复后证据：**
+
+![BUG-DISC-001：匿名读取和发送返回401且无数据库副作用](./screenshots/FIX-DISC-001-anonymous-401.png)
+
+![BUG-DISC-001：非成员读取返回403且合法成员读取正常](./screenshots/FIX-DISC-001-nonmember-read-403.png)
+
+![BUG-DISC-001：非成员普通与mention发送均返回403且无副作用](./screenshots/FIX-DISC-001-nonmember-send-403.png)
+
+![BUG-DISC-001：非成员重复发送后仍未自动加入小组](./screenshots/FIX-DISC-001-no-auto-join.png)
+
+![BUG-DISC-001：合法成员读取、发送、持久化与既有广播回归通过](./screenshots/FIX-DISC-001-valid-member-flow.png)
+
+![BUG-DISC-001：临时数据清零且group31基线未改变](./screenshots/FIX-DISC-001-cleanup.png)
+
 ## BUG-DISC-002：Socket.IO缺少认证与房间成员授权
 
 ### 基本信息
