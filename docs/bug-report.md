@@ -570,7 +570,7 @@ C 已登录但不属于 group 31。使用 C 的有效登录状态直接调用普
 | 修复日期 | 2026-09-18（UTC+8） |
 | 验证批次 | `20260918105158`，真实后端 `http://localhost:3001`、本地 MySQL |
 | 修改文件 | `server/index.js` |
-| 修复 commit | 待正式提交后回填 |
+| 修复 commit | [`301a46a87bd4cdc1bbde0ff0f4f37158d81ceb1c`](https://github.com/volcano-77/graduation-study-system/commit/301a46a87bd4cdc1bbde0ff0f4f37158d81ceb1c) — `fix: enforce task group permissions` |
 
 **实际接口与原权限模型：** 普通任务入口共有 `GET /api/tasks`、`POST /api/tasks`、`PUT /api/tasks/:id` 和 `DELETE /api/tasks/:id`，原来均只有 `requireAuthUser`。GET指定group时直接查询、不带group时返回全表；POST直接信任请求中的 `group_id`；PUT和DELETE直接按task id写库，没有先查任务真实归属。普通PUT只支持修改状态，前端也没有普通成员编辑任务内容功能；内容编辑只存在于独立的管理员 `PUT /api/admin/tasks/:taskId`。`GET /api/global/tasks` 原本已经按owner/member过滤。
 
