@@ -1063,6 +1063,36 @@ multer 仅配置磁盘存储和文件名，没有 `fileFilter`、MIME/扩展名�
 
 ![BUG-FILE-007：获取链接返回前端index.html](./screenshots/FILE-004-all-files-download-wrong-port.png)
 
+### 修复与定向回归追加记录（2026-09-18，BUG-FILE-007）
+
+> 上面的“待修复”、原始缺陷描述、实际结果、代码关联及2张修复前截图为发现阶段记录，完整保留。以下只追加本次修复与验证结果，不否认“获取”链接曾指向5173并返回前端 `index.html` 的历史。
+
+| 项目 | 内容 |
+| --- | --- |
+| 当前修复状态 | **已修复并验证** |
+| 修复日期 | 2026-09-18（UTC+8） |
+| 验证批次 | `20260918030850`，真实前端 `http://localhost:5173`、真实后端 `http://localhost:3001` |
+| 修改文件 | `src/pages/AllFiles.jsx`，只修正资料集锦“获取”链接的 URL 解析 |
+| 修复 commit | 待正式提交后回填 |
+
+**根因：** 后端 `group_files.file_url` 保存并返回 `/uploads/...` 相对路径，物理文件由 Express 在3001端口的 `/uploads` 静态路由提供。资料集锦页面原先直接把该相对路径赋给 `<a href>`，浏览器按照当前页面 origin 把它解析为5173端口；Vite 对该路径回退到前端 `index.html`，因此出现HTTP 200但内容不是目标文件。Dashboard和小组详情页已经使用 `API_BASE_URL` 补全相对文件地址，资料集锦页面未采用同一规则。
+
+**修复方式：** `AllFiles.jsx` 复用 `src/api/client.js` 已导出的 `API_BASE_URL`，增加与现有页面一致的 `resolveFileUrl()`：空值保持不可用，HTTP(S)绝对地址原样保留，以 `/` 开头或不带 `/` 的相对地址统一拼到3001后端基址。列表渲染时先得到完整下载地址，再写入“获取”链接。后端文件访问、上传、删除和权限逻辑均未修改，也未处理BUG-FILE-001～006。
+
+**修复验证结果：** 使用普通用户 `demo_user` 创建独立临时小组 `FIX-FILE-007-20260918030850`，上传 `FIX-FILE-007-20260918030850.txt`。`GET /api/files/all` 与 `GET /api/files/recent` 均返回200并包含该文件；真实Dashboard“最新资料速递”和 `/all-files` 资料列表均正常显示。资料集锦中“获取”的实际链接为 `http://localhost:3001/uploads/1789700930917-FIX-FILE-007-20260918030850.txt`，激活后打开后端文件响应，返回200、`Content-Type: text/plain; charset=utf-8`，响应正文与上传内容逐字一致；同一相对路径若按旧逻辑解析到5173，仍返回 `text/html` 和Vite页面，证明本次链接改向覆盖原缺陷。前端生产构建通过。
+
+**小范围回归：** Dashboard正常加载且最近资料入口可用；“查看更多”可进入资料集锦；资料列表正常加载并显示文件元数据；后端实际文件可获取。现有Dashboard与小组详情页的正确文件URL逻辑未改，未执行上传权限、匿名访问或危险文件类型扩展测试。
+
+**数据清理：** 验证后按精确 file ID 33 删除临时文件，再按精确 group ID 39 删除临时小组；`groups_table`、`group_files`、`group_members`、`tasks`、`discussions`、`notifications`、`shared_files` 中该临时资源相关记录均为0。临时物理文件不存在，`server/uploads` 文件集合恢复到验证前基线，其他上传文件变化为0；没有修改正式账号数据。
+
+**修复后证据：**
+
+![BUG-FILE-007：资料集锦正常显示并生成后端获取链接](./screenshots/FIX-FILE-007-download-link.png)
+
+![BUG-FILE-007：点击获取后返回真实TXT内容](./screenshots/FIX-FILE-007-file-response.png)
+
+![BUG-FILE-007：临时数据与物理文件清理完成](./screenshots/FIX-FILE-007-cleanup.png)
+
 ## BUG-NOTIF-001：notification id使用宽松整数解析
 
 ### 基本信息

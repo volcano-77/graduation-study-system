@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, FileText, Search } from 'lucide-react';
-import apiClient from '../api/client';
+import apiClient, { API_BASE_URL } from '../api/client';
 
 function formatFileSize(bytesValue) {
   const bytes = Number(bytesValue) || 0;
@@ -28,6 +28,20 @@ function formatTime(value) {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+function resolveFileUrl(fileUrl) {
+  const normalized = typeof fileUrl === 'string' ? fileUrl.trim() : '';
+  if (!normalized) {
+    return '';
+  }
+  if (/^https?:\/\//i.test(normalized)) {
+    return normalized;
+  }
+  if (normalized.startsWith('/')) {
+    return `${API_BASE_URL}${normalized}`;
+  }
+  return `${API_BASE_URL}/${normalized}`;
 }
 
 function AllFiles() {
@@ -135,6 +149,7 @@ function AllFiles() {
             ) : (
               <div className="divide-y divide-slate-100">
                 {filteredFiles.map((file) => {
+                  const fileUrl = resolveFileUrl(file.file_url);
                   return (
                     <article
                       key={file.id}
@@ -153,9 +168,9 @@ function AllFiles() {
                       <div className="text-slate-500">{formatFileSize(file.file_size)}</div>
                       <div className="text-slate-500">{formatTime(file.created_at)}</div>
                       <div className="flex md:justify-end">
-                        {file.file_url ? (
+                        {fileUrl ? (
                           <a
-                            href={file.file_url}
+                            href={fileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 text-slate-500 hover:text-[#9BB098] hover:bg-[#9BB098]/10 rounded-md px-3 py-1.5 transition-colors"
